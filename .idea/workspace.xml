@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8bb96528-4ab6-4b1e-8f3f-ff4b5cabf29d" name="Changes" comment="first commit">
-      <change beforePath="$PROJECT_DIR$/../.gitmodules" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitmodules" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="8bb96528-4ab6-4b1e-8f3f-ff4b5cabf29d" name="Changes" comment="first commit" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -250,7 +247,7 @@
       <workItem from="1697553102451" duration="245000" />
       <workItem from="1697555672090" duration="970000" />
       <workItem from="1697729323087" duration="1780000" />
-      <workItem from="1697749885880" duration="10644000" />
+      <workItem from="1697749885880" duration="10673000" />
     </task>
     <task id="LOCAL-00001" summary="major refactor">
       <option name="closed" value="true" />
