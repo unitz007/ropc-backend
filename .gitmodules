@@ -1,0 +1,7 @@
+; [submodule "frontend"]
+; 	path = sdlc-rust
+; 	url = git@github.com:unitz007/sdlc-rust.git
+[submodule "backend"]
+	path = backend-server
+	url = git@github.com:unitz007/ropc-backend.git
+	branch=main

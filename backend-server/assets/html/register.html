@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+    <title>Sign Up</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <script type="module">
+        import signUp from "/assets/js/register.js"
+
+        document.getElementById('signUp').addEventListener('click', signUp)
+    </script>
+
+    <link href="/assets/css/style.css" rel="stylesheet" type="text/css" media="all"/>
+
+    <link href="//fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i" rel="stylesheet">
+</head>
+<body>
+<div class="main-w3layouts wrapper">
+    &nbsp;
+    <div class="main-agileinfo">
+        <div class="agileits-top">
+            <div style="text-align: center; color: red" id="notify"></div>
+            &nbsp;
+            <form>
+                <label for="username"></label><input class="text" type="text" name="username" id="username"
+                                                     placeholder="Username">
+                <label for="email"></label><input class="text email" type="email" name="email" id="email"
+                                                  placeholder="Email">
+                <label for="password"></label><input class="text" type="password" name="password" id="password"
+                                                     placeholder="Password">
+                <label for="confirm_password"></label><input class="text w3lpass" type="password"
+                                                             name="confirm_password" id="confirm_password"
+                                                             placeholder="Confirm Password">
+                <div class="wthree-text">
+                    <div class="clear"></div>
+                </div>
+                <input type="button" value="SIGN UP" id="signUp">
+            </form>
+            <p>Already have an Account? <a href="/login"> Login Now!</a></p>
+        </div>
+    </div>
+</div>
+</body>
+</html>
