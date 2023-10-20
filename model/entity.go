@@ -30,7 +30,8 @@ func NewApplication(clientId, name string) (*Application, error) {
 
 func (a *Application) ToDTO() *ApplicationDto {
 	return &ApplicationDto{
-		ClientId: a.ClientId,
-		Name:     a.Name,
+		ClientId:    a.ClientId,
+		Name:        a.Name,
+		RedirectURL: a.RedirectUri,
 	}
 }

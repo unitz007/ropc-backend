@@ -24,6 +24,7 @@ type AccessToken struct {
 type ApplicationResponse struct {
 	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
+	RedirectUrl  string `json:"redirect_url"`
 }
 
 func NewResponse[T any](message string, payload T) *Response[T] {

@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -8,6 +9,15 @@ import (
 
 type ChiRouter struct {
 	router *chi.Mux
+}
+
+func (mux *ChiRouter) GetPathVariable(req *http.Request, variable string) (error, string) {
+	p := chi.URLParam(req, variable)
+	if p == "" {
+		return errors.New("missing path variable: " + variable), ""
+	}
+
+	return nil, p
 }
 
 func (mux *ChiRouter) Delete(path string, handler func(http.ResponseWriter, *http.Request)) {

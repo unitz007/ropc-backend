@@ -46,15 +46,15 @@ func main() {
 
 	// Handlers
 	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService)
-	applicationHandler := handlers.NewApplicationHandler(applicationRepository)
+	applicationHandler := handlers.NewApplicationHandler(applicationRepository, router)
 
 	// Server
 	server := NewServer(router)
 	server.RegisterHandler(appPath, http.MethodPost, applicationHandler.CreateApplication)
 	server.RegisterHandler(appPath, http.MethodGet, applicationHandler.GetApplications)
+	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, applicationHandler.GetApplication)
 	server.RegisterHandler(generateSecretPath, http.MethodPut, applicationHandler.GenerateSecret)
 	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
-	server.RegisterHandler(appPath, http.MethodGet, applicationHandler.GetApplication)
 
 	log.Fatal(server.Start(":" + config.ServerPort()))
 }

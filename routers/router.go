@@ -11,4 +11,5 @@ type Router interface {
 	Name() string
 	Put(path string, handler func(http.ResponseWriter, *http.Request))
 	Delete(path string, handler func(http.ResponseWriter, *http.Request))
+	GetPathVariable(req *http.Request, variable string) (error, string)
 }

@@ -23,6 +23,30 @@ func (_m *Router) Get(path string, handlerFunc func(http.ResponseWriter, *http.R
 	_m.Called(path, handlerFunc)
 }
 
+// GetPathVariable provides a mock function with given fields: req, variable
+func (_m *Router) GetPathVariable(req *http.Request, variable string) (error, string) {
+	ret := _m.Called(req, variable)
+
+	var r0 error
+	var r1 string
+	if rf, ok := ret.Get(0).(func(*http.Request, string) (error, string)); ok {
+		return rf(req, variable)
+	}
+	if rf, ok := ret.Get(0).(func(*http.Request, string) error); ok {
+		r0 = rf(req, variable)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	if rf, ok := ret.Get(1).(func(*http.Request, string) string); ok {
+		r1 = rf(req, variable)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+
+	return r0, r1
+}
+
 // Name provides a mock function with given fields:
 func (_m *Router) Name() string {
 	ret := _m.Called()

@@ -23,6 +23,11 @@ func (_m *ApplicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Requ
 	_m.Called(w, r)
 }
 
+// GetApplication provides a mock function with given fields: w, r
+func (_m *ApplicationHandler) GetApplication(w http.ResponseWriter, r *http.Request) {
+	_m.Called(w, r)
+}
+
 // GetApplications provides a mock function with given fields: w, r
 func (_m *ApplicationHandler) GetApplications(w http.ResponseWriter, r *http.Request) {
 	_m.Called(w, r)

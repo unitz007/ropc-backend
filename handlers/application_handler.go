@@ -3,9 +3,9 @@ package handlers
 import (
 	"backend-server/model"
 	"backend-server/repositories"
+	"backend-server/routers"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -19,20 +19,24 @@ type ApplicationHandler interface {
 }
 
 type applicationHandler struct {
+	router                routers.Router
 	applicationRepository repositories.ApplicationRepository
 }
 
 func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Request) {
-	accept := r.Header.Get("Accept")
-
-	isHtml := strings.Contains(accept, "text/html")
-
-	if isHtml == true {
-		http.ServeFile(w, r, "./assets/html/create_application.html")
-		return
-	} else {
-		panic(errors.New("accept type not supported"))
+	err, clientId := a.router.GetPathVariable(r, "client_id")
+	if err != nil {
+		_ = PrintResponse[any](404, w, nil)
 	}
+
+	app, err := a.applicationRepository.GetByClientId(clientId)
+	if err != nil {
+		panic(errors.New("application not found"))
+	}
+	res := model.NewResponse[*model.ApplicationDto]("success", app.ToDTO())
+
+	_ = PrintResponse[*model.Response[*model.ApplicationDto]](http.StatusOK, w, res)
+
 }
 
 func (a *applicationHandler) GetApplications(w http.ResponseWriter, _ *http.Request) {
@@ -87,8 +91,9 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 
 }
 
-func NewApplicationHandler(applicationRepository repositories.ApplicationRepository) ApplicationHandler {
+func NewApplicationHandler(applicationRepository repositories.ApplicationRepository, router routers.Router) ApplicationHandler {
 	return &applicationHandler{
+		router:                router,
 		applicationRepository: applicationRepository,
 	}
 }
@@ -100,6 +105,10 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 	err := JsonToStruct(r.Body, &request)
 	if err != nil {
 		panic(errors.New("invalid request body"))
+	}
+
+	if request.RedirectUri == "" {
+		panic(errors.New("redirect uri is required"))
 	}
 
 	if request.ClientId == "" {
@@ -120,9 +129,10 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 		panic(errors.New("application with this name already exists"))
 	}
 
-	app, err := model.NewApplication(request.ClientId, request.Name)
-	if err != nil {
-		panic(err)
+	app := &model.Application{
+		ClientId:    request.ClientId,
+		Name:        request.Name,
+		RedirectUri: request.RedirectUri,
 	}
 
 	err = a.applicationRepository.Create(app)
