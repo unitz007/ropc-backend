@@ -3,7 +3,7 @@ package repositories
 import (
 	"backend-server/conf"
 	"backend-server/mocks"
-	"backend-server/model/entities"
+	"backend-server/model"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -20,7 +20,7 @@ func TestCreateClient(t *testing.T) {
 		repo := NewApplicationRepository(db)
 
 		clientId := "client_id"
-		client := &entities.Application{
+		client := &model.Application{
 			ClientId:     clientId,
 			ClientSecret: mock.Anything,
 		}
@@ -41,7 +41,7 @@ func TestCreateClient(t *testing.T) {
 	t.Run("should fail if client secret or client id is empty", func(t *testing.T) {
 		db = mocks.NewDatabaseMock(t)
 		repository := NewApplicationRepository(db)
-		err := repository.Create(&entities.Application{ClientId: "clientId"})
+		err := repository.Create(&model.Application{ClientId: "clientId"})
 		require.Errorf(t, err, "should return error cause client secret is empty")
 	})
 

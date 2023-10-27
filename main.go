@@ -1,12 +1,12 @@
 package main
 
 import (
-	"backend-server/conf"
 	"backend-server/handlers"
-	"backend-server/logger"
+	"backend-server/middlewares"
 	"backend-server/repositories"
 	"backend-server/routers"
 	"backend-server/services"
+	"backend-server/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,11 +19,12 @@ const (
 	loginPath          = "/token"
 	appPath            = "/apps"
 	generateSecretPath = "/apps/generate_secret"
+	userPath           = "/users"
 )
 
 func main() {
 
-	config := conf.EnvironmentConfig
+	config := utils.NewConfig()
 	var router routers.Router
 
 	switch config.Mux() {
@@ -33,13 +34,14 @@ func main() {
 		router = routers.NewChiRouter(chi.NewRouter())
 	default:
 		s := fmt.Sprintf("%s is not a supported Mux router", config.Mux())
-		logger.Error(s, true)
+		utils.NewLogger().Error(s, true)
 	}
 
-	DB := conf.NewDataBase(config)
+	DB := repositories.NewDataBase(config)
 
 	// Repositories
 	applicationRepository := repositories.NewApplicationRepository(DB)
+	userRepository := repositories.NewUserRepository(DB)
 
 	// services
 	authenticatorService := services.NewAuthenticatorService(applicationRepository)
@@ -47,14 +49,19 @@ func main() {
 	// Handlers
 	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService)
 	applicationHandler := handlers.NewApplicationHandler(applicationRepository, router)
+	userHandler := handlers.NewUserHandler(config, userRepository)
+
+	security := middlewares.NewSecurity(config, userRepository)
 
 	// Server
 	server := NewServer(router)
-	server.RegisterHandler(appPath, http.MethodPost, applicationHandler.CreateApplication)
-	server.RegisterHandler(appPath, http.MethodGet, applicationHandler.GetApplications)
-	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, applicationHandler.GetApplication)
-	server.RegisterHandler(generateSecretPath, http.MethodPut, applicationHandler.GenerateSecret)
+	server.RegisterHandler(appPath, http.MethodPost, security.TokenValidation(applicationHandler.CreateApplication))
+	server.RegisterHandler(appPath, http.MethodGet, security.TokenValidation(applicationHandler.GetApplications))
+	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security.TokenValidation(applicationHandler.GetApplication))
+	server.RegisterHandler(generateSecretPath, http.MethodPut, security.TokenValidation(applicationHandler.GenerateSecret))
 	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
+	server.RegisterHandler(userPath, http.MethodPost, userHandler.CreateUser)
+	server.RegisterHandler(userPath+"/auth", http.MethodPost, userHandler.AuthenticateUser)
 
 	log.Fatal(server.Start(":" + config.ServerPort()))
 }

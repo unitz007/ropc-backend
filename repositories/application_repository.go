@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"backend-server/conf"
 	"backend-server/model"
 	"errors"
 	"strings"
@@ -11,14 +10,15 @@ import (
 
 type ApplicationRepository interface {
 	GetByClientId(clientId string) (*model.Application, error)
-	GetAll() []model.Application
+	GetByClientIdAndUserId(clientId string, userId uint) (*model.Application, error)
+	GetAll(userId uint) []model.Application
 	Create(client *model.Application) error
 	Update(app *model.Application) (*model.Application, error)
 	GetByName(name string) (*model.Application, error)
 }
 
 type applicationRepository struct {
-	db conf.Database[gorm.DB]
+	db Database[gorm.DB]
 }
 
 func (a applicationRepository) Update(app *model.Application) (*model.Application, error) {
@@ -35,8 +35,25 @@ func (a applicationRepository) Update(app *model.Application) (*model.Applicatio
 	return app, nil
 }
 
-func NewApplicationRepository(db conf.Database[gorm.DB]) ApplicationRepository {
+func NewApplicationRepository(db Database[gorm.DB]) ApplicationRepository {
 	return &applicationRepository{db: db}
+}
+
+func (a applicationRepository) GetByClientIdAndUserId(clientId string, userId uint) (*model.Application, error) {
+
+	var client model.Application
+
+	err := a.db.GetDatabaseConnection().
+		Model(&model.Application{}).
+		Where("client_id = ? AND user_id = ?", clientId, userId).
+		First(&client).
+		Error
+
+	if err != nil {
+		return nil, errors.New("application not found")
+	}
+
+	return &client, nil
 }
 
 func (a applicationRepository) GetByClientId(clientId string) (*model.Application, error) {
@@ -73,11 +90,13 @@ func (a applicationRepository) GetByName(name string) (*model.Application, error
 	return &client, nil
 }
 
-func (a applicationRepository) GetAll() []model.Application {
+func (a applicationRepository) GetAll(userId uint) []model.Application {
 
 	var clients []model.Application
 
-	a.db.GetDatabaseConnection().Find(&clients)
+	a.db.GetDatabaseConnection().
+		Raw("select * from applications where user_id = ?", userId).
+		Scan(&clients)
 
 	return clients
 }
@@ -87,8 +106,10 @@ func (a applicationRepository) Create(client *model.Application) error {
 	err := a.db.GetDatabaseConnection().Create(client).Error
 
 	if err != nil {
-		if strings.Contains(err.Error(), "Duplicate entry") {
-			return errors.New("application already exists")
+		if strings.Contains(err.Error(), "name") {
+			return errors.New("application name already exists")
+		} else if strings.Contains(err.Error(), "client_id") {
+			return errors.New("client_id already exists")
 		} else {
 			return errors.New("could not create application. Contact administrator")
 		}

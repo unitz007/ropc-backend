@@ -33,5 +33,5 @@ func NewClientService(repository repositories.ApplicationRepository) Application
 }
 
 func (s *clientService) Get() []model.Application {
-	return s.clientRepository.GetAll()
+	return s.clientRepository.GetAll(0)
 }

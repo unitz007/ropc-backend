@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"backend-server/logger"
+	"backend-server/utils"
 	"fmt"
 	"net/http"
 )
@@ -10,7 +10,7 @@ func RequestLogger(h func(w http.ResponseWriter, r *http.Request)) func(http.Res
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		s := fmt.Sprintf("%v request to %v", r.Method, r.URL.Path)
-		logger.Info(s)
+		utils.NewLogger().Info(s)
 		h(w, r)
 
 	}

@@ -4,6 +4,7 @@ import (
 	"backend-server/model"
 	"backend-server/repositories"
 	"backend-server/routers"
+	"backend-server/utils"
 	"errors"
 	"net/http"
 
@@ -29,7 +30,9 @@ func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Reque
 		_ = PrintResponse[any](404, w, nil)
 	}
 
-	app, err := a.applicationRepository.GetByClientId(clientId)
+	user, _ := utils.GetUserFromContext(r.Context())
+
+	app, err := a.applicationRepository.GetByClientIdAndUserId(clientId, user.ID)
 	if err != nil {
 		panic(errors.New("application not found"))
 	}
@@ -39,8 +42,15 @@ func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Reque
 
 }
 
-func (a *applicationHandler) GetApplications(w http.ResponseWriter, _ *http.Request) {
-	apps := a.applicationRepository.GetAll()
+func (a *applicationHandler) GetApplications(w http.ResponseWriter, r *http.Request) {
+
+	user, err := utils.GetUserFromContext(r.Context())
+	if err != nil {
+		panic(err)
+	}
+
+	apps := a.applicationRepository.GetAll(user.ID)
+
 	response := make([]*model.ApplicationDto, 0)
 	for _, app := range apps {
 		r := app.ToDTO()
@@ -59,7 +69,9 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 		panic(errors.New("invalid request body"))
 	}
 
-	app, err := a.applicationRepository.GetByClientId(request.ClientId)
+	user, _ := utils.GetUserFromContext(r.Context())
+
+	app, err := a.applicationRepository.GetByClientIdAndUserId(request.ClientId, user.ID)
 	if err != nil {
 		panic(err)
 	}
@@ -85,9 +97,12 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 	applicationResponse := &model.ApplicationResponse{
 		ClientId:     request.ClientId,
 		ClientSecret: secret,
+		RedirectUrl:  app.RedirectUri,
 	}
 
-	_ = PrintResponse[*model.ApplicationResponse](http.StatusOK, w, applicationResponse)
+	response := model.NewResponse[*model.ApplicationResponse]("secret generated successfully", applicationResponse)
+
+	_ = PrintResponse[*model.Response[*model.ApplicationResponse]](http.StatusOK, w, response)
 
 }
 
@@ -134,6 +149,9 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 		Name:        request.Name,
 		RedirectUri: request.RedirectUri,
 	}
+
+	user, _ := utils.GetUserFromContext(r.Context())
+	app.User = *user
 
 	err = a.applicationRepository.Create(app)
 	if err != nil {

@@ -32,7 +32,7 @@ func (a *authenticatorService) ClientCredentials(clientId, clientSecret string) 
 		return nil, errors.New(InvalidClientMessage)
 	}
 
-	tokenResponse, err := utils.GenerateToken(app, clientSecret)
+	tokenResponse, err := utils.GenerateToken(app, "clientSecret")
 	if err != nil {
 		return nil, err
 	}

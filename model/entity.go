@@ -12,6 +12,8 @@ type Application struct {
 	ClientSecret string `gorm:"size:100"`
 	Name         string `gorm:"unique"`
 	RedirectUri  string `gorm:""`
+	UserID       uint
+	User         User `gorm:"references:ID"`
 }
 
 func NewApplication(clientId, name string) (*Application, error) {

@@ -2,8 +2,8 @@ package middlewares
 
 import (
 	"backend-server/handlers"
-	"backend-server/logger"
 	"backend-server/model"
+	"backend-server/utils"
 	"net/http"
 )
 
@@ -15,7 +15,7 @@ func PanicRecovery(h func(w http.ResponseWriter, r *http.Request)) func(w http.R
 				if e, ok := err.(error); ok {
 					errorMsg = e.Error()
 				}
-				logger.Error(errorMsg, false)
+				utils.NewLogger().Error(errorMsg, false)
 				_ = handlers.PrintResponse(http.StatusBadRequest, w, model.NewResponse[any](errorMsg, nil))
 			}
 		}()

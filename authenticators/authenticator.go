@@ -23,7 +23,7 @@ type clientAuthenticator struct {
 
 func (selfC clientAuthenticator) Authenticate(clientId, clientSecret string) (*model.Token, error) {
 
-	client, err := selfC.repository.GetByClientId(clientId)
+	client, err := selfC.repository.GetByClientIdAndUserId(clientId)
 
 	if err != nil {
 		return nil, err

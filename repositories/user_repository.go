@@ -1,10 +1,10 @@
 package repositories
 
 import (
-	"backend-server/conf"
 	"backend-server/model"
 	"errors"
 	"log"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -16,10 +16,10 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	db conf.Database[gorm.DB]
+	db Database[gorm.DB]
 }
 
-func NewUserRepository(database conf.Database[gorm.DB]) UserRepository {
+func NewUserRepository(database Database[gorm.DB]) UserRepository {
 	return &userRepository{
 		db: database,
 	}
@@ -41,7 +41,12 @@ func (selfC userRepository) CreateUser(user *model.User) (*model.User, error) {
 
 	err := selfC.db.GetDatabaseConnection().Create(user).Error
 	if err != nil {
-		log.Println(err)
+		if strings.Contains(err.Error(), "username") {
+			return nil, errors.New("username already exists")
+		} else if strings.Contains(err.Error(), "email") {
+			return nil, errors.New("email already exists")
+		}
+
 		return nil, err
 	}
 

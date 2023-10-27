@@ -1,12 +1,14 @@
 package main
 
 import (
-	"backend-server/logger"
 	"backend-server/middlewares"
 	"backend-server/routers"
+	"backend-server/utils"
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 type Server interface {
@@ -21,6 +23,7 @@ type api struct {
 }
 
 type server struct {
+	newRelicApp *newrelic.Application
 	router      routers.Router
 	handlers    []api
 	middlewares []func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request)
@@ -32,14 +35,16 @@ func (s *server) AttachMiddleware(middleware func(w http.ResponseWriter, r *http
 }
 
 func NewServer(router routers.Router) Server {
+
 	return &server{
-		//config:   config,
 		router:   router,
 		handlers: make([]api, 0),
 	}
 }
 
 func (s *server) Start(addr string) error {
+
+	l := utils.NewLogger()
 
 	PORT := func() string {
 		index := 0
@@ -55,9 +60,9 @@ func (s *server) Start(addr string) error {
 
 	go func() {
 		time.Sleep(time.Millisecond * 5)
-		logger.Info(fmt.Sprintf("%d handler(s) registered", len(s.handlers)))
+		l.Info(fmt.Sprintf("%d handler(s) registered", len(s.handlers)))
 		msg := fmt.Sprintf("Server started on port %s, with %s.", PORT, s.router.Name())
-		logger.Info(msg)
+		l.Info(msg)
 	}()
 
 	err := s.router.Serve(addr)
@@ -72,7 +77,13 @@ func (s *server) Start(addr string) error {
 
 func (s *server) RegisterHandler(path, method string, handler func(w http.ResponseWriter, r *http.Request)) {
 
+	newRelicApp := utils.NewRelicInstance().App
 	fHandler := middlewares.RequestLogger(middlewares.PanicRecovery(handler))
+
+	// register new relic monitor
+	newrelic.WrapHandleFunc(newRelicApp, path, fHandler)
+	txn := s.newRelicApp.StartTransaction(path + "_monitor")
+	defer txn.End()
 
 	switch method {
 	case http.MethodGet:
@@ -83,7 +94,7 @@ func (s *server) RegisterHandler(path, method string, handler func(w http.Respon
 		s.router.Put(path, fHandler)
 	default:
 		m := fmt.Sprintf("%s not registered: %s", path, fmt.Sprintf("%s is an unsupported method type.", method))
-		logger.Warn(m)
+		utils.NewLogger().Warn(m)
 	}
 
 	h := api{

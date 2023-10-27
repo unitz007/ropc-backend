@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"backend-server/conf"
 	"backend-server/model"
+	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -11,7 +12,10 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-const bearerPrefix = "Bearer "
+const (
+	bearerPrefix = "Bearer "
+	UserKey      = "user"
+)
 
 func GenerateToken(client *model.Application, tokenSecret string) (string, error) {
 
@@ -19,7 +23,7 @@ func GenerateToken(client *model.Application, tokenSecret string) (string, error
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
 		Sub:       client.ClientId,
-		Issuer:    fmt.Sprintf("https://%s:%s", getIp(), conf.EnvironmentConfig.ServerPort()),
+		Issuer:    fmt.Sprintf("http://%s:%s", getIp(), NewConfig().ServerPort()),
 		Name:      client.Name,
 	}
 
@@ -59,4 +63,16 @@ func getIp() string {
 		}
 	}
 	return ""
+}
+
+func GetUserFromContext(ctx context.Context) (*model.User, error) {
+	val := ctx.Value(UserKey)
+
+	t, ok := val.(*model.User)
+
+	if !ok {
+		return nil, errors.New("could not verify user from context")
+	}
+
+	return t, nil
 }

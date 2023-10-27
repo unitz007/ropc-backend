@@ -1,12 +1,15 @@
 package handlers
 
 import (
-	"backend-server/conf"
 	"backend-server/model"
 	"backend-server/repositories"
-	"backend-server/services"
 	"backend-server/utils"
+	"errors"
 	"net/http"
+	"time"
+
+	"github.com/golang-jwt/jwt"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -15,34 +18,93 @@ const (
 
 type UserHandler interface {
 	CreateUser(w http.ResponseWriter, r *http.Request)
+	AuthenticateUser(w http.ResponseWriter, r *http.Request)
 	GetUserDetails(w http.ResponseWriter, r *http.Request)
 }
 
-type userHandler struct{}
+type userHandler struct {
+	config         utils.Config
+	userRepository repositories.UserRepository
+}
 
-func NewUserAuthenticatorHandler() UserHandler {
-	return &userHandler{}
+func (u *userHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
+	var loginRequest *model.LoginRequest
+
+	err := JsonToStruct(r.Body, &loginRequest)
+	if err != nil {
+		panic(errors.New("invalid request body"))
+	}
+
+	user, err := u.userRepository.GetUser(loginRequest.UsernameOrEmail)
+	if err != nil {
+		_ = PrintResponse[any](http.StatusUnauthorized, w, nil)
+		return
+	}
+
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginRequest.Password)); err != nil || errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+		_ = PrintResponse[any](http.StatusUnauthorized, w, nil)
+		return
+	}
+
+	accessToken := model.AccessToken{
+		Issuer:    "",
+		Sub:       user.Email,
+		IssuedAt:  time.Now().Unix(),
+		ExpiresAt: time.Now().Add(time.Duration(u.config.TokenExpiry()) * time.Minute).Unix(),
+	}
+
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessToken).SignedString([]byte(u.config.TokenSecret()))
+
+	resp := model.NewResponse[*model.Token]("Authentication successful", &model.Token{AccessToken: token})
+
+	_ = PrintResponse[*model.Response[*model.Token]](http.StatusOK, w, resp)
+}
+
+func NewUserHandler(config utils.Config, userRepository repositories.UserRepository) UserHandler {
+	return &userHandler{
+		config:         config,
+		userRepository: userRepository,
+	}
 }
 
 func (u *userHandler) CreateUser(response http.ResponseWriter, request *http.Request) {
-	var user *model.User
 
-	err := JsonToStruct(request.Body, &user)
+	var requestBody *model.CreateUser
+
+	err := JsonToStruct(request.Body, &requestBody)
 	if err != nil {
-		panic(err)
+		panic(errors.New("invalid request body"))
 	}
 
-	database := conf.NewDataBase(conf.EnvironmentConfig)
+	if requestBody.UserName == "" {
+		panic(errors.New("username is required"))
+	}
 
-	userRepository := repositories.NewUserRepository(database)
-	userService := services.NewUserService(userRepository)
+	if requestBody.EmailAddress == "" {
+		panic(errors.New("email is required"))
+	}
 
-	_, err = userService.CreateUser(user)
+	if requestBody.Password == "" {
+		panic(errors.New("password is required"))
+	}
+
+	hashed, _ := bcrypt.GenerateFromPassword([]byte(requestBody.Password), 0)
+
+	user := &model.User{
+		Username: requestBody.UserName,
+		Password: string(hashed),
+		Email:    requestBody.EmailAddress,
+	}
+
+	_, err = u.userRepository.CreateUser(user)
 	if err != nil {
 		panic(err)
 
 	}
-	_ = PrintResponse(http.StatusCreated, response, model.NewResponse[any](userCreated, nil))
+
+	res := model.NewResponse[any](userCreated, nil)
+
+	_ = PrintResponse(http.StatusCreated, response, res)
 }
 
 func (u *userHandler) GetUserDetails(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +112,7 @@ func (u *userHandler) GetUserDetails(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		accessToken := r.Header.Get("Authorization")
-		claims, err := utils.ValidateToken(accessToken, conf.EnvironmentConfig.TokenSecret())
+		claims, err := utils.ValidateToken(accessToken, utils.NewConfig().TokenSecret())
 		if err != nil {
 			panic(err)
 		}
