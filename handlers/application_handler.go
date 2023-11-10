@@ -122,13 +122,9 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 		panic(errors.New("invalid request body"))
 	}
 
-	if request.RedirectUri == "" {
-		panic(errors.New("redirect uri is required"))
-	}
-
-	if request.ClientId == "" {
-		panic(errors.New("client id is required"))
-	}
+	//if request.RedirectUri == "" {
+	//	panic(errors.New("redirect uri is required"))
+	//}
 
 	if request.Name == "" {
 		panic(errors.New("name is required"))
@@ -145,7 +141,7 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 	}
 
 	app := &model.Application{
-		ClientId:    request.ClientId,
+		ClientId:    uuid.NewString(),
 		Name:        request.Name,
 		RedirectUri: request.RedirectUri,
 	}
