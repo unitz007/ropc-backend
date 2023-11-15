@@ -4,7 +4,6 @@ import (
 	"backend-server/model"
 	"backend-server/repositories"
 	"backend-server/routers"
-	"backend-server/utils"
 	"errors"
 	"net/http"
 
@@ -30,7 +29,7 @@ func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Reque
 		_ = PrintResponse[any](404, w, nil)
 	}
 
-	user, _ := utils.GetUserFromContext(r.Context())
+	user, _ := GetUserFromContext(r.Context())
 
 	app, err := a.applicationRepository.GetByClientIdAndUserId(clientId, user.ID)
 	if err != nil {
@@ -44,7 +43,7 @@ func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Reque
 
 func (a *applicationHandler) GetApplications(w http.ResponseWriter, r *http.Request) {
 
-	user, err := utils.GetUserFromContext(r.Context())
+	user, err := GetUserFromContext(r.Context())
 	if err != nil {
 		panic(err)
 	}
@@ -69,7 +68,7 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 		panic(errors.New("invalid request body"))
 	}
 
-	user, _ := utils.GetUserFromContext(r.Context())
+	user, _ := GetUserFromContext(r.Context())
 
 	app, err := a.applicationRepository.GetByClientIdAndUserId(request.ClientId, user.ID)
 	if err != nil {
@@ -146,7 +145,7 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 		RedirectUri: request.RedirectUri,
 	}
 
-	user, _ := utils.GetUserFromContext(r.Context())
+	user, _ := GetUserFromContext(r.Context())
 	app.User = *user
 
 	err = a.applicationRepository.Create(app)

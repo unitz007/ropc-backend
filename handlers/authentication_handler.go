@@ -44,7 +44,7 @@ func (a *authenticationHandler) Authenticate(w http.ResponseWriter, r *http.Requ
 		panic(errors.New("grant type is required"))
 	}
 
-	var token *model.Token
+	var token string
 	var err error
 
 	switch grantType {
@@ -59,12 +59,14 @@ func (a *authenticationHandler) Authenticate(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	response := &model.Response[*model.Token]{
+	tokenResponse := &model.TokenResponse{AccessToken: token}
+
+	response := &model.Response[*model.TokenResponse]{
 		Message: authenticationSuccessMsg,
-		Payload: token,
+		Payload: tokenResponse,
 	}
 
-	_ = PrintResponse[*model.Response[*model.Token]](http.StatusOK, w, response)
+	_ = PrintResponse[*model.Response[*model.TokenResponse]](http.StatusOK, w, response)
 }
 
 func (a *authenticationHandler) GetMux() *mux.Router {

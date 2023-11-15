@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"backend-server/model"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -10,6 +12,7 @@ import (
 
 const (
 	jsonDecodeError = "Couldn't decode JSON: "
+	UserKey         = "user"
 )
 
 func JsonToStruct[T any](r io.ReadCloser, t T) error {
@@ -35,4 +38,16 @@ func PrintResponse[T any](statusCode int, res http.ResponseWriter, payload T) er
 	}
 
 	return nil
+}
+
+func GetUserFromContext(ctx context.Context) (*model.User, error) {
+	val := ctx.Value(UserKey)
+
+	t, ok := val.(*model.User)
+
+	if !ok {
+		return nil, errors.New("could not verify user from context")
+	}
+
+	return t, nil
 }

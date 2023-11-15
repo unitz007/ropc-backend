@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"backend-server/handlers"
 	"backend-server/repositories"
 	"backend-server/utils"
 	"context"
@@ -43,7 +44,7 @@ func (s *Security) TokenValidation(h func(w http.ResponseWriter, r *http.Request
 			http.Error(w, "", http.StatusForbidden)
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), utils.UserKey, user))
+		r = r.WithContext(context.WithValue(r.Context(), handlers.UserKey, user))
 
 		h(w, r)
 	}

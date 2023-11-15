@@ -44,7 +44,7 @@ func main() {
 	userRepository := repositories.NewUserRepository(DB)
 
 	// services
-	authenticatorService := services.NewAuthenticatorService(applicationRepository)
+	authenticatorService := services.NewAuthenticatorService(applicationRepository, config)
 
 	// Handlers
 	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService)

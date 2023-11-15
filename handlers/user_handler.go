@@ -6,9 +6,7 @@ import (
 	"backend-server/utils"
 	"errors"
 	"net/http"
-	"time"
 
-	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -46,18 +44,11 @@ func (u *userHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken := model.AccessToken{
-		Issuer:    "",
-		Sub:       user.Email,
-		IssuedAt:  time.Now().Unix(),
-		ExpiresAt: time.Now().Add(time.Duration(u.config.TokenExpiry()) * time.Minute).Unix(),
-	}
+	accessToken := model.NewAccessToken(user.Email, u.config).Sign()
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessToken).SignedString([]byte(u.config.TokenSecret()))
+	resp := model.NewResponse[*model.TokenResponse]("Authentication successful", &model.TokenResponse{AccessToken: accessToken})
 
-	resp := model.NewResponse[*model.Token]("Authentication successful", &model.Token{AccessToken: token})
-
-	_ = PrintResponse[*model.Response[*model.Token]](http.StatusOK, w, resp)
+	_ = PrintResponse[*model.Response[*model.TokenResponse]](http.StatusOK, w, resp)
 }
 
 func NewUserHandler(config utils.Config, userRepository repositories.UserRepository) UserHandler {

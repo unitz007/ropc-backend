@@ -15,33 +15,34 @@ const (
 )
 
 type AuthenticatorService interface {
-	ClientCredentials(clientId, clientSecret string) (*model.Token, error)
+	ClientCredentials(clientId, clientSecret string) (string, error)
 }
 
 type authenticatorService struct {
 	applicationRepository repositories.ApplicationRepository
+	config                utils.Config
 }
 
-func (a *authenticatorService) ClientCredentials(clientId, clientSecret string) (*model.Token, error) {
+func (a *authenticatorService) ClientCredentials(clientId, clientSecret string) (string, error) {
 	app, err := a.applicationRepository.GetByClientId(clientId)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(app.ClientSecret), []byte(clientSecret)); err != nil || errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-		return nil, errors.New(InvalidClientMessage)
+		return "", errors.New(InvalidClientMessage)
 	}
 
-	tokenResponse, err := utils.GenerateToken(app, "clientSecret")
+	accessToken := model.NewAccessToken(app.ClientId, a.config).Sign()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return &model.Token{AccessToken: tokenResponse}, nil
+	return accessToken, nil
 }
 
-func NewAuthenticatorService(applicationRepository repositories.ApplicationRepository) AuthenticatorService {
-	return &authenticatorService{applicationRepository: applicationRepository}
+func NewAuthenticatorService(applicationRepository repositories.ApplicationRepository, config utils.Config) AuthenticatorService {
+	return &authenticatorService{applicationRepository: applicationRepository, config: config}
 }
 
 //
