@@ -2,7 +2,7 @@ package authenticators
 
 import (
 	"backend-server/mocks"
-	"backend-server/model/entities"
+	"backend-server/model"
 	"errors"
 	"testing"
 
@@ -38,7 +38,7 @@ func Test_UserAuthenticationFailure(t *testing.T) {
 		}
 
 		// should fail with wrong password combination
-		userRepositoryMock.On("GetUser", RightUsername).Return(&entities.User{Username: RightUsername, Password: hashedRightPassword}, nil)
+		userRepositoryMock.On("GetUser", RightUsername).Return(&model.User{Username: RightUsername, Password: hashedRightPassword}, nil)
 		user, err := userAuthenticator.Authenticate(RightUsername, WrongPassword)
 		assert.EqualError(t, err, "invalid user credentials")
 		assert.Nil(t, user)
@@ -54,7 +54,7 @@ func Test_UserAuthenticationFailure(t *testing.T) {
 		}
 
 		// test with right encryption but still wrong password nonetheless, should fail
-		userRepositoryMock.On("GetUser", RightUsername).Return(&entities.User{Username: RightUsername, Password: hashedRightPassword}, nil)
+		userRepositoryMock.On("GetUser", RightUsername).Return(&model.User{Username: RightUsername, Password: hashedRightPassword}, nil)
 		user, err := userAuthenticator.Authenticate(RightUsername, WrongPassword)
 		assert.EqualError(t, err, "invalid user credentials")
 		assert.Nil(t, user)
@@ -71,7 +71,7 @@ func Test_UserAuthenticationSuccess(t *testing.T) {
 	userAuthenticator := &userAuthenticator{
 		userRepository: userRepositoryMock,
 	}
-	userRepositoryMock.On("GetUser", RightUsername).Return(&entities.User{Username: RightUsername, Password: hashedRightPassword}, nil)
+	userRepositoryMock.On("GetUser", RightUsername).Return(&model.User{Username: RightUsername, Password: hashedRightPassword}, nil)
 	user, err := userAuthenticator.Authenticate(RightUsername, RightPassword)
 	assert.NotNil(t, user)
 	assert.Nil(t, err)
