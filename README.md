@@ -1,5 +1,4 @@
-[![Go](https://github.com/unitz007/ropc-service/actions/workflows/go.yml/badge.svg)](https://github.com/unitz007/backend-server/actions/workflows/go.yml)
-
+[![Docker Image CI](https://github.com/unitz007/ropc-backend/actions/workflows/docker-image.yml/badge.svg)](https://github.com/unitz007/ropc-backend/actions/workflows/docker-image.yml)
 # ROPC SERVICE (BACKEND) 
 
 This is an implementation of Resource Owner Password Credentials.
