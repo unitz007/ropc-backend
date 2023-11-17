@@ -11,8 +11,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      tag: 1.0
 
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag unitz007/ropc:1.0
+      run: docker build . --file Dockerfile --tag unitz007/ropc:$tag
+    - name: Push the Docker image
+      run: docker push unitz007/ropc:$tag
