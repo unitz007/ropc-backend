@@ -16,7 +16,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Log in to Docker Hub
+      run: docker login ${{ secrets.DOCKER_USERNAME }}
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag unitz007/ropc:$tag
+      run: docker build . --file Dockerfile --tag unitz007/ropc:1.0
+
+
     - name: Push the Docker image
-      run: docker push unitz007/ropc:$tag
+      run: docker push unitz007/ropc:1.0
