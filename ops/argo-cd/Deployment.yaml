@@ -1,0 +1,77 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ropc-db
+  namespace: test
+  labels:
+    app: ropc-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ropc-db
+  template:
+    metadata:
+      labels:
+        app: ropc-db
+    spec:
+      containers:
+        - name: ropc-db-container
+          image: mariadb:latest
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              value: dbPassword
+            - name: MARIADB_DATABASE
+              value: ropc_db
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ropc-backend
+  namespace: test
+  labels:
+    app: ropc-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ropc-backend
+  template:
+    metadata:
+      labels:
+        app: ropc-backend
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: ropc-container
+          image: unitz007/ropc:1.0
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NEW_RELIC_APP_NAME
+              value: "golang_monitor"
+            - name: NEW_RELIC_LICENSE
+              value: eu01xx47e73a44a47317868a6c7a89d5FFFFNRAL
+            - name: ROPC_MUX
+              value: "chi_router"
+            - name: ROPC_DB_HOST
+              value: ropc-db
+            - name: ROPC_DATABASE_PASSWORD
+              value: dbPassword
+            - name: ROPC_DB_USER
+              value: root
+            - name: ROPC_DB_NAME
+              value: ropc_db
+            - name: ROPC_DB_PORT
+              value: "3306"
+            - name: ROPC_TOKEN_SECRET
+              value: secretToken
+            - name: ROPC_TOKEN_EXPIRY
+              value: "3000"
+            - name: ROPC_SERVER_PORT
+              value: "8080"
