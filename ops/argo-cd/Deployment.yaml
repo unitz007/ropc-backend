@@ -48,7 +48,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: ropc-container
-          image: unitz007/ropc:1.0
+          image: unitz007/ropc:latest
           imagePullPolicy: "Always"
           ports:
             - containerPort: 8080
