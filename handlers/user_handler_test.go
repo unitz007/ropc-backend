@@ -3,6 +3,7 @@ package handlers
 import (
 	"backend-server/mocks"
 	"backend-server/model"
+	"backend-server/utils"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -53,7 +54,7 @@ func TestCreateUser(t *testing.T) {
 		request := httptest.NewRequest(http.MethodPost, "/users", e.Request)
 		response := httptest.NewRecorder()
 
-		handler := NewUserHandler(userRepository)
+		handler := NewUserHandler(utils.NewConfig(), userRepository)
 		exec := func() {
 			handler.CreateUser(response, request)
 		}
@@ -75,7 +76,7 @@ func TestCreateUser(t *testing.T) {
 		request := httptest.NewRequest(http.MethodPost, "/users", json)
 		response := httptest.NewRecorder()
 
-		handler := NewUserHandler(userRepository)
+		handler := NewUserHandler(utils.NewConfig(), userRepository)
 
 		exec := func() {
 			handler.CreateUser(response, request)
@@ -94,7 +95,7 @@ func TestCreateUser(t *testing.T) {
 		request := httptest.NewRequest(http.MethodPost, "/users", json)
 		response := httptest.NewRecorder()
 
-		handler := NewUserHandler(userRepository)
+		handler := NewUserHandler(utils.NewConfig(), userRepository)
 		handler.CreateUser(response, request)
 
 		expected := http.StatusCreated
@@ -107,10 +108,6 @@ func TestCreateUser(t *testing.T) {
 		userRepository.AssertCalled(t, "CreateUser", user)
 
 	})
-}
-
-func TestUserAuthenticator(t *testing.T) {
-
 }
 
 func userRequest(t testing.TB, username, email, password string) *strings.Reader {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -102,6 +103,8 @@ func (a applicationRepository) GetAll(userId uint) []model.Application {
 }
 
 func (a applicationRepository) Create(client *model.Application) error {
+
+	client.ClientId = uuid.NewString()
 
 	err := a.db.GetDatabaseConnection().Create(client).Error
 

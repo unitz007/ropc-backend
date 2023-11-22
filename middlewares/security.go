@@ -39,7 +39,6 @@ func (s *Security) TokenValidation(h func(w http.ResponseWriter, r *http.Request
 
 		email := token["sub"].(string)
 		user, err := s.userRepository.GetUser(email)
-		//fmt.Println(user)
 		if err != nil {
 			http.Error(w, "", http.StatusForbidden)
 		}

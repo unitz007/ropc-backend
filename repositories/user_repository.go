@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -38,6 +39,9 @@ func (selfC userRepository) GetUser(username string) (*model.User, error) {
 }
 
 func (selfC userRepository) CreateUser(user *model.User) (*model.User, error) {
+
+	hashed, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 0)
+	user.Password = string(hashed)
 
 	err := selfC.db.GetDatabaseConnection().Create(user).Error
 	if err != nil {

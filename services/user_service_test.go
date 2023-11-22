@@ -2,7 +2,7 @@ package services
 
 import (
 	"backend-server/mocks"
-	model "backend-server/model/entities"
+	model "backend-server/model"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

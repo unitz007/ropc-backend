@@ -27,6 +27,7 @@ func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Reque
 	err, clientId := a.router.GetPathVariable(r, "client_id")
 	if err != nil {
 		_ = PrintResponse[any](404, w, nil)
+		return
 	}
 
 	user, _ := GetUserFromContext(r.Context())
@@ -121,26 +122,16 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 		panic(errors.New("invalid request body"))
 	}
 
-	//if request.RedirectUri == "" {
-	//	panic(errors.New("redirect uri is required"))
-	//}
-
 	if request.Name == "" {
 		panic(errors.New("name is required"))
 	}
 
-	alreadyExists, _ := a.applicationRepository.GetByClientId(request.ClientId)
-	if alreadyExists != nil {
-		panic(errors.New("application with this client id already exists"))
-	}
-
-	alreadyExists, _ = a.applicationRepository.GetByName(request.Name)
+	alreadyExists, _ := a.applicationRepository.GetByName(request.Name)
 	if alreadyExists != nil {
 		panic(errors.New("application with this name already exists"))
 	}
 
 	app := &model.Application{
-		ClientId:    uuid.NewString(),
 		Name:        request.Name,
 		RedirectUri: request.RedirectUri,
 	}

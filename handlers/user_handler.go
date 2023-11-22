@@ -79,11 +79,9 @@ func (u *userHandler) CreateUser(response http.ResponseWriter, request *http.Req
 		panic(errors.New("password is required"))
 	}
 
-	hashed, _ := bcrypt.GenerateFromPassword([]byte(requestBody.Password), 0)
-
 	user := &model.User{
 		Username: requestBody.UserName,
-		Password: string(hashed),
+		Password: requestBody.Password,
 		Email:    requestBody.EmailAddress,
 	}
 

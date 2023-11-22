@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"backend-server/mocks"
-	"backend-server/model"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -93,7 +92,7 @@ func TestAuthenticationHandler_Authenticate(t *testing.T) {
 		handler := NewAuthenticationHandler(authenticator)
 		w := httptest.NewRecorder()
 
-		authenticator.On("ClientCredentials", clientId, clientSecret).Return(nil, errors.New("auth failed"))
+		authenticator.On("ClientCredentials", clientId, clientSecret).Return("", errors.New("auth failed"))
 		handler.Authenticate(w, req)
 
 		expected := http.StatusUnauthorized
@@ -111,7 +110,7 @@ func TestAuthenticationHandler_Authenticate(t *testing.T) {
 		handler := NewAuthenticationHandler(authenticator)
 		w := httptest.NewRecorder()
 
-		authenticator.On("ClientCredentials", clientId, clientSecret).Return(&model.Token{}, nil)
+		authenticator.On("ClientCredentials", clientId, clientSecret).Return("", nil)
 		handler.Authenticate(w, req)
 
 		expected := http.StatusOK
