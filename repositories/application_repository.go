@@ -3,6 +3,7 @@ package repositories
 import (
 	"backend-server/model"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -104,6 +105,7 @@ func (a applicationRepository) GetAll(userId uint) []model.Application {
 
 func (a applicationRepository) Create(client *model.Application) error {
 
+	fmt.Println("ihnihn")
 	client.ClientId = uuid.NewString()
 
 	err := a.db.GetDatabaseConnection().Create(client).Error
