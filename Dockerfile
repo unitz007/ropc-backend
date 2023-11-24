@@ -1,4 +1,4 @@
-FROM golang:1.19
+FROM golang:1.20
 
 # Set destination for COPY
 WORKDIR /app
@@ -11,8 +11,10 @@ RUN go mod download
 # https://docs.docker.com/engine/reference/builder/#copy
 COPY *.go ./
 
+RUN go version
+
 # Build
-RUN CGO_ENABLED=0 GOOS=linux go build -o /ropc
+RUN go build -o ropc
 
 # Run
 CMD ["/ropc"]
