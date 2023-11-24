@@ -92,8 +92,10 @@ func (s *server) RegisterHandler(path, method string, handler func(w http.Respon
 		s.router.Post(path, fHandler)
 	case http.MethodPut:
 		s.router.Put(path, fHandler)
+	case http.MethodDelete:
+		s.router.Delete(path, fHandler)
 	default:
-		m := fmt.Sprintf("%s not registered: %s", path, fmt.Sprintf("%s is an unsupported method type.", method))
+		m := fmt.Sprintf("%s not registered: %s", path, fmt.Sprintf("%s is not a upported HTTP method type.", method))
 		utils.NewLogger().Warn(m)
 	}
 

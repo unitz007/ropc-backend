@@ -8,6 +8,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"gorm.io/gorm"
 )
 
 const (
@@ -50,4 +54,13 @@ func GetUserFromContext(ctx context.Context) (*model.User, error) {
 	}
 
 	return t, nil
+}
+
+func BuildTestRequest(t testing.TB, body io.Reader) (req *httptest.ResponseRecorder, res *http.Request) {
+	t.Helper()
+	request := httptest.NewRequest(http.MethodPut, "http://localhost:0909/apps", body)
+	request = request.WithContext(context.WithValue(request.Context(), UserKey, &model.User{Model: gorm.Model{ID: uint(0)}}))
+	response := httptest.NewRecorder()
+
+	return response, request
 }

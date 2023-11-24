@@ -5,6 +5,7 @@ import (
 	"backend-server/repositories"
 	"backend-server/routers"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -16,11 +17,38 @@ type ApplicationHandler interface {
 	GenerateSecret(w http.ResponseWriter, r *http.Request)
 	GetApplications(w http.ResponseWriter, r *http.Request)
 	GetApplication(w http.ResponseWriter, r *http.Request)
+	DeleteApplication(response http.ResponseWriter, request *http.Request)
 }
 
 type applicationHandler struct {
 	router                routers.Router
 	applicationRepository repositories.ApplicationRepository
+}
+
+func (a *applicationHandler) DeleteApplication(response http.ResponseWriter, request *http.Request) {
+
+	err, clientId := a.router.GetPathVariable(request, "client_id")
+	if err != nil {
+		panic(err)
+	}
+
+	user, err := GetUserFromContext(request.Context())
+	if err != nil {
+		panic(errors.New("application does not exist"))
+	}
+
+	app, err := a.applicationRepository.GetByClientIdAndUserId(clientId, user.ID)
+
+	if err != nil {
+		panic(errors.New("application does not exist"))
+	}
+
+	err = a.applicationRepository.Delete(app.ID)
+	if err != nil {
+		panic(errors.New("failed to delete application"))
+	}
+
+	_ = PrintResponse[any](http.StatusOK, response, nil)
 }
 
 func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +86,9 @@ func (a *applicationHandler) GetApplications(w http.ResponseWriter, r *http.Requ
 		response = append(response, r)
 	}
 
-	_ = PrintResponse[[]*model.ApplicationDto](http.StatusOK, w, response)
+	responseBody := model.NewResponse[[]*model.ApplicationDto](fmt.Sprintf("%d application(s) fetched successfully", len(apps)), response)
+
+	_ = PrintResponse[*model.Response[[]*model.ApplicationDto]](http.StatusOK, w, responseBody)
 }
 
 func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +145,10 @@ func NewApplicationHandler(applicationRepository repositories.ApplicationReposit
 
 func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Request) {
 
-	var request *model.CreateApplication
+	var (
+		request *model.CreateApplication
+		user, _ = GetUserFromContext(r.Context())
+	)
 
 	err := JsonToStruct(r.Body, &request)
 	if err != nil {
@@ -126,7 +159,7 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 		panic(errors.New("name is required"))
 	}
 
-	alreadyExists, _ := a.applicationRepository.GetByName(request.Name)
+	alreadyExists, _ := a.applicationRepository.GetByNameAndUserId(request.Name, user.ID)
 	if alreadyExists != nil {
 		panic(errors.New("application with this name already exists"))
 	}
@@ -134,10 +167,8 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 	app := &model.Application{
 		Name:        request.Name,
 		RedirectUri: request.RedirectUri,
+		User:        *user,
 	}
-
-	user, _ := GetUserFromContext(r.Context())
-	app.User = *user
 
 	err = a.applicationRepository.Create(app)
 	if err != nil {
@@ -147,5 +178,4 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 	response := model.NewResponse[*model.ApplicationDto]("application created successfully", app.ToDTO())
 
 	_ = PrintResponse[*model.Response[*model.ApplicationDto]](http.StatusCreated, w, response)
-
 }

@@ -1,15 +1,33 @@
 package model
 
+// swagger:model CreateApplication
 type CreateApplication struct {
-	ClientId    string `json:"client_id"`
-	Name        string `json:"name"`
+
+	// ClientId of the application
+	// in: string
+	ClientId string `json:"client_id"`
+
+	// Name of application
+	// in: string
+	Name string `json:"name"`
+
+	// RedirectUri of application
+	// in: string
 	RedirectUri string `json:"redirect_uri"`
 }
 
+// swagger:model CreateUser
 type CreateUser struct {
-	UserName     string `json:"username"`
+
+	// Username of User
+	// in: string
+	UserName string `json:"username"`
+	// EmailAddress of User
+	// in: string
 	EmailAddress string `json:"email"`
-	Password     string `json:"password"`
+	// Password of User
+	// in: string
+	Password string `json:"password"`
 }
 
 type LoginRequest struct {

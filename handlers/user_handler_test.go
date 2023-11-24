@@ -111,6 +111,7 @@ func TestCreateUser(t *testing.T) {
 }
 
 func userRequest(t testing.TB, username, email, password string) *strings.Reader {
+
 	t.Helper()
 	body := `{"username": "` + username + `", "email": "` + email + `", "password": "` + password + `"}`
 	return strings.NewReader(body)

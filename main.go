@@ -1,3 +1,19 @@
+//   Product Api:
+//    version: 0.1
+//    title: Product Api
+//   Schemes: http, https
+//   Host:
+//   BasePath: /api/v1
+//      Consumes:
+//      - application/json
+//   Produces:
+//   - application/json
+//   SecurityDefinitions:
+//    Bearer:
+//     type: apiKey
+//     name: Authorization
+//     in: header
+//   swagger:meta
 package main
 
 import (
@@ -58,10 +74,14 @@ func main() {
 	server.RegisterHandler(appPath, http.MethodPost, security.TokenValidation(applicationHandler.CreateApplication))
 	server.RegisterHandler(appPath, http.MethodGet, security.TokenValidation(applicationHandler.GetApplications))
 	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security.TokenValidation(applicationHandler.GetApplication))
+	server.RegisterHandler(appPath+"/{client_id}", http.MethodDelete, security.TokenValidation(applicationHandler.DeleteApplication))
+
 	server.RegisterHandler(generateSecretPath, http.MethodPut, security.TokenValidation(applicationHandler.GenerateSecret))
 	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
 	server.RegisterHandler(userPath, http.MethodPost, userHandler.CreateUser)
 	server.RegisterHandler(userPath+"/auth", http.MethodPost, userHandler.AuthenticateUser)
+
+	// swagger
 
 	log.Fatal(server.Start(":" + config.ServerPort()))
 }

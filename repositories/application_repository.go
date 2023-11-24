@@ -16,10 +16,37 @@ type ApplicationRepository interface {
 	Create(client *model.Application) error
 	Update(app *model.Application) (*model.Application, error)
 	GetByName(name string) (*model.Application, error)
+	Delete(id uint) error
+	GetByNameAndUserId(name string, userId uint) (*model.Application, error)
 }
 
 type applicationRepository struct {
 	db Database[gorm.DB]
+}
+
+func (a applicationRepository) GetByNameAndUserId(name string, userId uint) (*model.Application, error) {
+
+	var client model.Application
+
+	err := a.db.GetDatabaseConnection().
+		Model(&model.Application{}).
+		Where("name = ? and user_id = ?", name, userId).
+		First(&client).
+		Error
+
+	if err != nil {
+		return nil, errors.New("application not found")
+	}
+
+	return &client, nil
+}
+
+func (a applicationRepository) Delete(id uint) error {
+	return a.db.GetDatabaseConnection().
+		Unscoped().
+		Model(&model.Application{}).
+		Delete("id = ?", id).
+		Error
 }
 
 func (a applicationRepository) Update(app *model.Application) (*model.Application, error) {
@@ -95,8 +122,8 @@ func (a applicationRepository) GetAll(userId uint) []model.Application {
 
 	var clients []model.Application
 
-	a.db.GetDatabaseConnection().
-		Raw("select * from applications where user_id = ?", userId).
+	a.db.GetDatabaseConnection().Model(model.Application{}).
+		Where("user_id = ?", userId).
 		Scan(&clients)
 
 	return clients
