@@ -33,7 +33,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag unitz007/ropc:${{ env.tag }}
+        run: docker build --tag unitz007/ropc:${{ env.tag }} .
 
 
       - name: Push the Docker image
