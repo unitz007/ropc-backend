@@ -1,10 +1,18 @@
-FROM golang:1.17-alpine
-LABEL authors="charles"
+FROM golang:1.19
 
-RUN mkdir /app
-
+# Set destination for COPY
 WORKDIR /app
 
-COPY ./ropc .
+# Download Go modules
+COPY go.mod go.sum ./
+RUN go mod download
 
-CMD ["./ropc"]
+# Copy the source code. Note the slash at the end, as explained in
+# https://docs.docker.com/engine/reference/builder/#copy
+COPY *.go ./
+
+# Build
+RUN CGO_ENABLED=0 GOOS=linux go build -o /ropc
+
+# Run
+CMD ["/ropc"]
