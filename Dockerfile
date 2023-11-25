@@ -1,4 +1,4 @@
-FROM golang:1.17-alpine
+FROM golang:1.20
 
 # Set destination for COPY
 WORKDIR /app
@@ -11,10 +11,8 @@ RUN go mod download
 # https://docs.docker.com/engine/reference/builder/#copy
 COPY *.go ./
 
-RUN go version
-
-## Build
-#RUN go run ./...
+# Build
+RUN go build
 
 # Run
-CMD ["go run ./..."]
+CMD ["./ropc-backend"]

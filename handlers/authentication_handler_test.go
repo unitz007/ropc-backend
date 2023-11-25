@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"backend-server/mocks"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"ropc-backend/mocks"
 	"strings"
 	"testing"
 
