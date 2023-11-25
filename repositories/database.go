@@ -1,9 +1,9 @@
 package repositories
 
 import (
-	"backend-server/model"
-	"backend-server/utils"
 	"fmt"
+	"ropc-backend/model"
+	"ropc-backend/utils"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

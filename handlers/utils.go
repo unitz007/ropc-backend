@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"backend-server/model"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"ropc-backend/model"
 	"testing"
 
 	"gorm.io/gorm"

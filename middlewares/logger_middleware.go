@@ -1,9 +1,9 @@
 package middlewares
 
 import (
-	"backend-server/utils"
 	"fmt"
 	"net/http"
+	"ropc-backend/utils"
 )
 
 func RequestLogger(h func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {

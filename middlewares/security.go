@@ -1,12 +1,12 @@
 package middlewares
 
 import (
-	"backend-server/handlers"
-	"backend-server/repositories"
-	"backend-server/utils"
 	"context"
 	"errors"
 	"net/http"
+	"ropc-backend/handlers"
+	"ropc-backend/repositories"
+	"ropc-backend/utils"
 )
 
 const (

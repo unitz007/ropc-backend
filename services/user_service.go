@@ -1,9 +1,9 @@
 package services
 
 import (
-	"backend-server/model"
-	"backend-server/repositories"
 	"errors"
+	"ropc-backend/model"
+	"ropc-backend/repositories"
 
 	"golang.org/x/crypto/bcrypt"
 )

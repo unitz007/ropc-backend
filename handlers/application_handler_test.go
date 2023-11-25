@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"backend-server/mocks"
-	"backend-server/model"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"ropc-backend/mocks"
+	"ropc-backend/model"
 	"strings"
 	"testing"
 

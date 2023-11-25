@@ -1,10 +1,10 @@
 package middlewares
 
 import (
-	"backend-server/handlers"
-	"backend-server/model"
-	"backend-server/utils"
 	"net/http"
+	"ropc-backend/handlers"
+	"ropc-backend/model"
+	"ropc-backend/utils"
 )
 
 func PanicRecovery(h func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {

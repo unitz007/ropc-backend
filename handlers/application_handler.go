@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"backend-server/model"
-	"backend-server/repositories"
-	"backend-server/routers"
 	"errors"
 	"fmt"
 	"net/http"
+	"ropc-backend/model"
+	"ropc-backend/repositories"
+	"ropc-backend/routers"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"

@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"backend-server/model"
-	"backend-server/services"
 	"errors"
 	"net/http"
+	"ropc-backend/model"
+	"ropc-backend/services"
 
 	"github.com/gorilla/mux"
 )

@@ -1,11 +1,11 @@
 package main
 
 import (
-	"backend-server/middlewares"
-	"backend-server/routers"
-	"backend-server/utils"
 	"fmt"
 	"net/http"
+	"ropc-backend/middlewares"
+	"ropc-backend/routers"
+	"ropc-backend/utils"
 	"time"
 
 	"github.com/newrelic/go-agent/v3/newrelic"

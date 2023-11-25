@@ -17,15 +17,15 @@
 package main
 
 import (
-	"backend-server/handlers"
-	"backend-server/middlewares"
-	"backend-server/repositories"
-	"backend-server/routers"
-	"backend-server/services"
-	"backend-server/utils"
 	"fmt"
 	"log"
 	"net/http"
+	"ropc-backend/handlers"
+	"ropc-backend/middlewares"
+	"ropc-backend/repositories"
+	"ropc-backend/routers"
+	"ropc-backend/services"
+	"ropc-backend/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/mux"

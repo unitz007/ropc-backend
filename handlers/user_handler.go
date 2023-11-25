@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"backend-server/model"
-	"backend-server/repositories"
-	"backend-server/utils"
 	"errors"
 	"net/http"
+	"ropc-backend/model"
+	"ropc-backend/repositories"
+	"ropc-backend/utils"
 
 	"golang.org/x/crypto/bcrypt"
 )

@@ -1,4 +1,4 @@
-FROM golang:1.20
+FROM golang:1.17-alpine
 
 # Set destination for COPY
 WORKDIR /app
@@ -13,8 +13,8 @@ COPY *.go ./
 
 RUN go version
 
-# Build
-RUN go build -o ropc
+## Build
+#RUN go run ./...
 
 # Run
-CMD ["/ropc"]
+CMD ["go run ./..."]

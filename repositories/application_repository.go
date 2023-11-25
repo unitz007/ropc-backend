@@ -1,8 +1,8 @@
 package repositories
 
 import (
-	"backend-server/model"
 	"errors"
+	"ropc-backend/model"
 	"strings"
 
 	"github.com/google/uuid"
