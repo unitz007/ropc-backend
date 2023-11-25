@@ -1,11 +1,11 @@
 package authenticators
 
 import (
-	"backend-server/model"
+	"ropc-backend/model"
 )
 
 var (
-	// test user details
+	// RightUsername test user details
 	RightUsername       = "right_username"
 	RightPassword       = "right_password"
 	WrongPassword       = "wrong_password"
@@ -13,11 +13,10 @@ var (
 	hashedRightPassword = "$2a$12$JadjhGXumDBw.8X9o0.EaeNkIDaeGtmHkAmxfgrqApaFT0t.ZVrm."
 
 	// test client details
-	rightClientId           = "right_clientId"
-	rightClientSecret       = "right_clientSecret"
-	WrongClientId           = "wrong_clientId"
-	WrongClientSecret       = "wrong_clientSecret"
-	hashedRightClientSecret = "$2a$12$0TUqBhM9DdBw980nTxz1EuL3eM/jQQSABDVuO6/lrCsjuUCOCFdxy"
+	rightClientId     = "right_clientId"
+	rightClientSecret = "right_clientSecret"
+	WrongClientId     = "wrong_clientId"
+	WrongClientSecret = "wrong_clientSecret"
 
 	_ = model.Application{
 		ClientId:     rightClientId,

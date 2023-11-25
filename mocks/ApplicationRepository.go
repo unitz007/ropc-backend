@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	model "backend-server/model"
+	model "ropc-backend/model"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -129,36 +129,6 @@ func (_m *ApplicationRepository) GetByClientIdAndUserId(clientId string, userId 
 	return r0, r1
 }
 
-// GetByNamAndUserId provides a mock function with given fields: name, userId
-func (_m *ApplicationRepository) GetByNameAndUserId(name string, userId uint) (*model.Application, error) {
-	ret := _m.Called(name, userId)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetByNameAndUserId")
-	}
-
-	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, uint) (*model.Application, error)); ok {
-		return rf(name, userId)
-	}
-	if rf, ok := ret.Get(0).(func(string, uint) *model.Application); ok {
-		r0 = rf(name, userId)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Application)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(string, uint) error); ok {
-		r1 = rf(name, userId)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetByName provides a mock function with given fields: name
 func (_m *ApplicationRepository) GetByName(name string) (*model.Application, error) {
 	ret := _m.Called(name)
@@ -182,6 +152,36 @@ func (_m *ApplicationRepository) GetByName(name string) (*model.Application, err
 
 	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByNameAndUserId provides a mock function with given fields: name, userId
+func (_m *ApplicationRepository) GetByNameAndUserId(name string, userId uint) (*model.Application, error) {
+	ret := _m.Called(name, userId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByNameAndUserId")
+	}
+
+	var r0 *model.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, uint) (*model.Application, error)); ok {
+		return rf(name, userId)
+	}
+	if rf, ok := ret.Get(0).(func(string, uint) *model.Application); ok {
+		r0 = rf(name, userId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Application)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, uint) error); ok {
+		r1 = rf(name, userId)
 	} else {
 		r1 = ret.Error(1)
 	}
