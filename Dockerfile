@@ -1,18 +1,23 @@
-FROM golang:1.20
+FROM golang:1.19
+
 
 # Set destination for COPY
-WORKDIR /app
+WORKDIR /go/src/ropc-backend
 
-# Download Go modules
-COPY go.mod go.sum ./
-RUN go mod download
+## Download Go modules
+#COPY go.mod go.sum ./
+#RUN go mod download
+#
+#
+#COPY *.go ./
+#
+## Build
+#RUN go build -o ./ropc-backend .
 
-# Copy the source code. Note the slash at the end, as explained in
-# https://docs.docker.com/engine/reference/builder/#copy
-COPY *.go ./
+COPY . .
 
-# Build
-RUN go build
+RUN go get -d ./...
+RUN go build -o ./ropc-backend -buildvcs=false
 
 # Run
 CMD ["./ropc-backend"]
