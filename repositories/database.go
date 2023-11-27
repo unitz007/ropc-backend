@@ -31,12 +31,12 @@ func NewDataBase(config utils.Config) Database[gorm.DB] {
 
 	db, err := gorm.Open(mysql.Open(DbUrl), &gorm.Config{})
 	if err != nil {
-		log.Error(err.Error(), true)
+		log.Fatal(err.Error())
 	}
 
 	err = db.AutoMigrate(&model.User{}, &model.Application{})
 	if err != nil {
-		log.Error("Could not migrate:"+err.Error(), true)
+		log.Fatal("Could not migrate:" + err.Error())
 	}
 
 	log.Info("Database connection established")

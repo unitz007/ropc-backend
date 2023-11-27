@@ -18,7 +18,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"ropc-backend/handlers"
 	"ropc-backend/middlewares"
@@ -41,6 +40,7 @@ const (
 func main() {
 
 	config := utils.NewConfig()
+	logger := utils.NewZapLogger(config)
 	var router routers.Router
 
 	switch config.Mux() {
@@ -50,7 +50,7 @@ func main() {
 		router = routers.NewChiRouter(chi.NewRouter())
 	default:
 		s := fmt.Sprintf("%s is not a supported Mux router", config.Mux())
-		utils.NewLogger().Error(s, true)
+		utils.NewLogger().Fatal(s)
 	}
 
 	DB := repositories.NewDataBase(config)
@@ -83,5 +83,5 @@ func main() {
 
 	// swagger
 
-	log.Fatal(server.Start(":" + config.ServerPort()))
+	logger.Fatal(server.Start(":" + config.ServerPort()).Error())
 }

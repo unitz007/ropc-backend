@@ -5,44 +5,49 @@ import (
 	"os"
 
 	"github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter"
-	"gorm.io/gorm/logger"
 )
 
 const (
 	reset  = "\033[0m"
 	red    = "\033[31m"
 	yellow = "\033[33m"
-	green  = logger.Green
+	green  = "\033[32m"
 )
 
-type Logger struct {
+type Logger interface {
+	Info(v string)
+	Error(v string)
+	Warn(v string)
+	Fatal(v string)
+}
+
+type logger struct {
 	l *log.Logger
 }
 
-func NewLogger() *Logger {
+func (l logger) Fatal(v string) {
+	l.l.Fatal(v)
+}
+
+func NewLogger() Logger {
 	newRelicApp := NewRelicInstance()
 	writer := logWriter.New(os.Stdout, newRelicApp.App)
 	l := log.New(&writer, "", log.Default().Flags())
 
-	return &Logger{l}
+	return &logger{l}
 
 }
 
-func (l Logger) Error(v string, exit bool) {
+func (l logger) Error(v string) {
 
 	l.l.Printf("%sERROR: %s%s\n", red, v, reset)
-
-	if exit {
-		os.Exit(1)
-	}
-
 }
 
-func (l Logger) Warn(v string) {
+func (l logger) Warn(v string) {
 	l.l.Printf("%sWARN: %s%s\n", yellow, v, reset)
 }
 
-func (l Logger) Info(v string) {
+func (l logger) Info(v string) {
 
 	l.l.Printf("%sINFO: %s%s\n", green, v, reset)
 }

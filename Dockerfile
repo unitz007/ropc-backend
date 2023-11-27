@@ -16,8 +16,11 @@ WORKDIR /go/src/ropc-backend
 
 COPY . .
 
-RUN go get -d ./...
 RUN go build -o ./ropc-backend -buildvcs=false
 
+RUN cp ropc-backend /root
+
+RUN rm -rf *
+
 # Run
-CMD ["./ropc-backend"]
+CMD ["/root/ropc-backend"]
