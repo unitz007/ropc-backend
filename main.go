@@ -17,71 +17,90 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"ropc-backend/handlers"
-	"ropc-backend/middlewares"
+	"ropc-backend/kernel"
 	"ropc-backend/repositories"
-	"ropc-backend/routers"
 	"ropc-backend/services"
 	"ropc-backend/utils"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/mux"
 )
 
 const (
-	loginPath          = "/token"
-	appPath            = "/apps"
-	generateSecretPath = "/apps/generate_secret"
-	userPath           = "/users"
+	loginPath           = "/token"
+	appPath             = "/apps"
+	generateSecretPath  = "/apps/generate_secret"
+	userPath            = "/users"
+	tokenHeader         = "Authorization"
+	tokenHeaderErrorMsg = "bearer token is required"
 )
 
 func main() {
 
 	config := utils.NewConfig()
-	var router routers.Router
-
-	switch config.Mux() {
-	case "gorilla_mux":
-		router = routers.NewRouter(mux.NewRouter())
-	case "chi_router":
-		router = routers.NewChiRouter(chi.NewRouter())
-	default:
-		s := fmt.Sprintf("%s is not a supported Mux router", config.Mux())
-		utils.NewLogger().Error(s, true)
+	ctx, err := kernel.NewContext(config)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	DB := repositories.NewDataBase(config)
+	//m := middlewares.NewMiddleware(ctx.Logger)
+
+	defaultMiddlewares := kernel.NewMiddleware(ctx.Logger)
+	//defaultMiddlewares = append(defaultMiddlewares, m.PanicRecovery)
 
 	// Repositories
-	applicationRepository := repositories.NewApplicationRepository(DB)
-	userRepository := repositories.NewUserRepository(DB)
+	applicationRepository := repositories.NewApplicationRepository(ctx.Database)
+	userRepository := repositories.NewUserRepository(ctx.Database)
 
 	// services
 	authenticatorService := services.NewAuthenticatorService(applicationRepository, config)
 
 	// Handlers
 	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService)
-	applicationHandler := handlers.NewApplicationHandler(applicationRepository, router)
+	applicationHandler := handlers.NewApplicationHandler(applicationRepository, ctx.Router)
 	userHandler := handlers.NewUserHandler(config, userRepository)
 
-	security := middlewares.NewSecurity(config, userRepository)
+	security := func(h func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			accessToken := r.Header.Get(tokenHeader)
+
+			if accessToken == "" {
+				panic(errors.New(tokenHeaderErrorMsg + " for path: " + r.URL.String()))
+			}
+
+			token, err := utils.ValidateToken(accessToken, config.TokenSecret())
+
+			if err != nil {
+				panic(errors.New("token validation failed: " + err.Error()))
+			}
+
+			email := token["sub"].(string)
+			user, err := userRepository.GetUser(email)
+			if err != nil {
+				http.Error(w, "", http.StatusForbidden)
+			}
+
+			r = r.WithContext(context.WithValue(r.Context(), handlers.UserKey, user))
+
+			h(w, r)
+		}
+	}
 
 	// Server
-	server := NewServer(router)
-	server.RegisterHandler(appPath, http.MethodPost, security.TokenValidation(applicationHandler.CreateApplication))
-	server.RegisterHandler(appPath, http.MethodGet, security.TokenValidation(applicationHandler.GetApplications))
-	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security.TokenValidation(applicationHandler.GetApplication))
-	server.RegisterHandler(appPath+"/{client_id}", http.MethodDelete, security.TokenValidation(applicationHandler.DeleteApplication))
+	server := kernel.NewServer(ctx.Router, defaultMiddlewares)
+	server.RegisterHandler(appPath, http.MethodPost, security(applicationHandler.CreateApplication))
+	server.RegisterHandler(appPath, http.MethodGet, security(applicationHandler.GetApplications))
+	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security(applicationHandler.GetApplication))
+	server.RegisterHandler(appPath+"/{client_id}", http.MethodDelete, security(applicationHandler.DeleteApplication))
 
-	server.RegisterHandler(generateSecretPath, http.MethodPut, security.TokenValidation(applicationHandler.GenerateSecret))
+	server.RegisterHandler(generateSecretPath, http.MethodPut, security(applicationHandler.GenerateSecret))
 	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
 	server.RegisterHandler(userPath, http.MethodPost, userHandler.CreateUser)
 	server.RegisterHandler(userPath+"/auth", http.MethodPost, userHandler.AuthenticateUser)
 
 	// swagger
 
-	log.Fatal(server.Start(":" + config.ServerPort()))
+	ctx.Logger.Fatal(server.Start(":" + config.ServerPort()).Error())
 }

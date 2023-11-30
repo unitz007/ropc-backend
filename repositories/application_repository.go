@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"errors"
+	"ropc-backend/kernel"
 	"ropc-backend/model"
 	"strings"
 
@@ -21,7 +22,7 @@ type ApplicationRepository interface {
 }
 
 type applicationRepository struct {
-	db Database[gorm.DB]
+	db kernel.Database[gorm.DB]
 }
 
 func (a applicationRepository) GetByNameAndUserId(name string, userId uint) (*model.Application, error) {
@@ -63,7 +64,7 @@ func (a applicationRepository) Update(app *model.Application) (*model.Applicatio
 	return app, nil
 }
 
-func NewApplicationRepository(db Database[gorm.DB]) ApplicationRepository {
+func NewApplicationRepository(db kernel.Database[gorm.DB]) ApplicationRepository {
 	return &applicationRepository{db: db}
 }
 

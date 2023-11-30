@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"os"
 	"strconv"
 )
@@ -17,9 +18,14 @@ type Config interface {
 	NewRelicAppName() string
 	NewRelicLicense() string
 	Mux() string
+	Environment() string
 }
 
 type config struct{}
+
+func (e config) Environment() string {
+	return getEnvironmentVariable("ROPC_ENVIRONMENT")
+}
 
 func (e config) NewRelicAppName() string {
 	return getEnvironmentVariable("NEW_RELIC_APP_NAME")
@@ -65,7 +71,7 @@ func (e config) TokenExpiry() int {
 
 	v, err := strconv.Atoi(getEnvironmentVariable("ROPC_TOKEN_EXPIRY"))
 	if err != nil {
-		NewLogger().Error("Error getting token expiry", true)
+		log.Fatal("Error getting token expiry")
 	}
 
 	return v
@@ -78,7 +84,7 @@ func NewConfig() Config {
 func getEnvironmentVariable(env string) string {
 	val, ok := os.LookupEnv(env)
 	if !ok {
-		NewLogger().Error("unable to load environment variable: "+env, true)
+		log.Fatal("unable to load environment variable: " + env)
 	}
 
 	return val

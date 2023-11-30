@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/json"
+	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt"
@@ -40,4 +42,19 @@ func ValidateToken(token, tokenSecret string) (jwt.MapClaims, error) {
 	}
 
 	return nil, err
+}
+
+func PrintResponse[T any](statusCode int, res http.ResponseWriter, payload T) error {
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(statusCode)
+	err := json.NewEncoder(res).Encode(payload)
+	if err != nil {
+		res.WriteHeader(http.StatusBadRequest)
+		_, err = res.Write([]byte("Invalid response"))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

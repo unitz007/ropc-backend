@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"ropc-backend/kernel"
 	"ropc-backend/model"
 	"ropc-backend/repositories"
-	"ropc-backend/routers"
+	"ropc-backend/utils"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -21,7 +22,7 @@ type ApplicationHandler interface {
 }
 
 type applicationHandler struct {
-	router                routers.Router
+	router                kernel.Router
 	applicationRepository repositories.ApplicationRepository
 }
 
@@ -48,13 +49,13 @@ func (a *applicationHandler) DeleteApplication(response http.ResponseWriter, req
 		panic(errors.New("failed to delete application"))
 	}
 
-	_ = PrintResponse[any](http.StatusOK, response, nil)
+	_ = utils.PrintResponse[any](http.StatusOK, response, nil)
 }
 
 func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Request) {
 	err, clientId := a.router.GetPathVariable(r, "client_id")
 	if err != nil {
-		_ = PrintResponse[any](404, w, nil)
+		_ = utils.PrintResponse[any](404, w, nil)
 		return
 	}
 
@@ -66,7 +67,7 @@ func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Reque
 	}
 	res := model.NewResponse[*model.ApplicationDto]("success", app.ToDTO())
 
-	_ = PrintResponse[*model.Response[*model.ApplicationDto]](http.StatusOK, w, res)
+	_ = utils.PrintResponse[*model.Response[*model.ApplicationDto]](http.StatusOK, w, res)
 
 }
 
@@ -88,7 +89,7 @@ func (a *applicationHandler) GetApplications(w http.ResponseWriter, r *http.Requ
 
 	responseBody := model.NewResponse[[]*model.ApplicationDto](fmt.Sprintf("%d application(s) fetched successfully", len(apps)), response)
 
-	_ = PrintResponse[*model.Response[[]*model.ApplicationDto]](http.StatusOK, w, responseBody)
+	_ = utils.PrintResponse[*model.Response[[]*model.ApplicationDto]](http.StatusOK, w, responseBody)
 }
 
 func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Request) {
@@ -132,11 +133,11 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 
 	response := model.NewResponse[*model.ApplicationResponse]("secret generated successfully", applicationResponse)
 
-	_ = PrintResponse[*model.Response[*model.ApplicationResponse]](http.StatusOK, w, response)
+	_ = utils.PrintResponse[*model.Response[*model.ApplicationResponse]](http.StatusOK, w, response)
 
 }
 
-func NewApplicationHandler(applicationRepository repositories.ApplicationRepository, router routers.Router) ApplicationHandler {
+func NewApplicationHandler(applicationRepository repositories.ApplicationRepository, router kernel.Router) ApplicationHandler {
 	return &applicationHandler{
 		router:                router,
 		applicationRepository: applicationRepository,
@@ -161,7 +162,8 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 
 	alreadyExists, _ := a.applicationRepository.GetByNameAndUserId(request.Name, user.ID)
 	if alreadyExists != nil {
-		panic(errors.New("application with this name already exists"))
+		_ = utils.PrintResponse[any](409, w, nil)
+		return
 	}
 
 	app := &model.Application{
@@ -177,5 +179,5 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 
 	response := model.NewResponse[*model.ApplicationDto]("application created successfully", app.ToDTO())
 
-	_ = PrintResponse[*model.Response[*model.ApplicationDto]](http.StatusCreated, w, response)
+	_ = utils.PrintResponse[*model.Response[*model.ApplicationDto]](http.StatusCreated, w, response)
 }

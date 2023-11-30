@@ -33,7 +33,7 @@ func (m *MuxMultiplexer) Name() string {
 	return "Mux Router"
 }
 
-func NewRouter(mux *mux.Router) Router {
+func NewRouter(mux *mux.Router) *MuxMultiplexer {
 	return &MuxMultiplexer{router: mux}
 }
 
