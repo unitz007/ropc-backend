@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 type Context[DatabaseConnectionReference any] struct {
@@ -15,7 +16,7 @@ type Context[DatabaseConnectionReference any] struct {
 	Logger   Logger
 }
 
-func NewContext[DatabaseConnectionReference any](config utils.Config) (*Context[DatabaseConnectionReference], error) {
+func NewContext(config utils.Config) (*Context[gorm.DB], error) {
 
 	db, err := NewDatabase(config)
 	if err != nil {
@@ -29,11 +30,15 @@ func NewContext[DatabaseConnectionReference any](config utils.Config) (*Context[
 		case "gorilla_mux":
 			return routers.NewRouter(mux.NewRouter()), nil
 		default:
-			return nil, errors.New("invalid router specified:" + config.Mux())
+			return nil, errors.New("invalid router specified: " + config.Mux())
 		}
 	}()
 
-	context := &Context[DatabaseConnectionReference]{
+	if err != nil {
+		return nil, err
+	}
+
+	context := &Context[gorm.DB]{
 		Database: db,
 		Logger:   utils.NewZapLogger(config),
 		Router:   router,

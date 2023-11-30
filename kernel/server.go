@@ -73,6 +73,10 @@ func (s *server) Start(addr string) error {
 
 func (s *server) RegisterHandler(path, method string, handler func(w http.ResponseWriter, r *http.Request)) {
 
+	for _, m := range s.middlewares {
+		m(handler)
+	}
+
 	var l Logger = utils.NewZapLogger(utils.NewConfig())
 
 	//newRelicApp := utils.NewRelicInstance().App
@@ -85,13 +89,13 @@ func (s *server) RegisterHandler(path, method string, handler func(w http.Respon
 
 	switch method {
 	case http.MethodGet:
-		s.router.Get(path, nil)
+		s.router.Get(path, handler)
 	case http.MethodPost:
-		s.router.Post(path, nil)
+		s.router.Post(path, handler)
 	case http.MethodPut:
-		s.router.Put(path, nil)
+		s.router.Put(path, handler)
 	case http.MethodDelete:
-		s.router.Delete(path, nil)
+		s.router.Delete(path, handler)
 	default:
 		m := fmt.Sprintf("%s not registered: %s", path, fmt.Sprintf("%s is not a upported HTTP method type.", method))
 		l.Warn(m)

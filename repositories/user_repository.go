@@ -3,6 +3,7 @@ package repositories
 import (
 	"errors"
 	"log"
+	"ropc-backend/kernel"
 	"ropc-backend/model"
 	"strings"
 
@@ -17,10 +18,10 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	db Database[gorm.DB]
+	db kernel.Database[gorm.DB]
 }
 
-func NewUserRepository(database Database[gorm.DB]) UserRepository {
+func NewUserRepository(database kernel.Database[gorm.DB]) UserRepository {
 	return &userRepository{
 		db: database,
 	}

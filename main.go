@@ -25,8 +25,6 @@ import (
 	"ropc-backend/repositories"
 	"ropc-backend/services"
 	"ropc-backend/utils"
-
-	"gorm.io/gorm"
 )
 
 const (
@@ -39,10 +37,15 @@ const (
 func main() {
 
 	config := utils.NewConfig()
-	ctx, err := kernel.NewContext[gorm.DB](config)
+	ctx, err := kernel.NewContext(config)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	//m := middlewares.NewMiddleware(ctx.Logger)
+
+	defaultMiddlewares := make([]func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request), 0)
+	//defaultMiddlewares = append(defaultMiddlewares, m.PanicRecovery)
 
 	// Repositories
 	applicationRepository := repositories.NewApplicationRepository(ctx.Database)
@@ -59,7 +62,7 @@ func main() {
 	security := middlewares.NewSecurity(config, userRepository)
 
 	// Server
-	server := kernel.NewServer(ctx.Router)
+	server := kernel.NewServer(ctx.Router, defaultMiddlewares)
 	server.RegisterHandler(appPath, http.MethodPost, security.TokenValidation(applicationHandler.CreateApplication))
 	server.RegisterHandler(appPath, http.MethodGet, security.TokenValidation(applicationHandler.GetApplications))
 	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security.TokenValidation(applicationHandler.GetApplication))

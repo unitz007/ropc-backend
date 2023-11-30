@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"ropc-backend/kernel"
 	"ropc-backend/model"
 	"ropc-backend/repositories"
-	"ropc-backend/routers"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -21,7 +21,7 @@ type ApplicationHandler interface {
 }
 
 type applicationHandler struct {
-	router                routers.Router
+	router                kernel.Router
 	applicationRepository repositories.ApplicationRepository
 }
 
@@ -136,7 +136,7 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 
 }
 
-func NewApplicationHandler(applicationRepository repositories.ApplicationRepository, router routers.Router) ApplicationHandler {
+func NewApplicationHandler(applicationRepository repositories.ApplicationRepository, router kernel.Router) ApplicationHandler {
 	return &applicationHandler{
 		router:                router,
 		applicationRepository: applicationRepository,

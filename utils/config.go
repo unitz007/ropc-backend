@@ -24,7 +24,7 @@ type Config interface {
 type config struct{}
 
 func (e config) Environment() string {
-	return getEnvironmentVariable("ENVIRONMENT")
+	return getEnvironmentVariable("ROPC_ENVIRONMENT")
 }
 
 func (e config) NewRelicAppName() string {

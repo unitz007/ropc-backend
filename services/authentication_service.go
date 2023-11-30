@@ -33,7 +33,7 @@ func (a *authenticatorService) ClientCredentials(clientId, clientSecret string) 
 		return "", errors.New(InvalidClientMessage)
 	}
 
-	accessToken := model.NewAccessToken(app.ClientId, a.config).Sign()
+	accessToken := model.NewAccessToken(app.ClientId, a.config.TokenExpiry(), "").Sign(a.config.TokenSecret())
 	if err != nil {
 		return "", err
 	}

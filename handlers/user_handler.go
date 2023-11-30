@@ -44,7 +44,7 @@ func (u *userHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken := model.NewAccessToken(user.Email, u.config).Sign()
+	accessToken := model.NewAccessToken(user.Email, u.config.TokenExpiry(), "").Sign(u.config.TokenSecret())
 
 	resp := model.NewResponse[*model.TokenResponse]("Authentication successful", &model.TokenResponse{AccessToken: accessToken})
 

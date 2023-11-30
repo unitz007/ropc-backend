@@ -13,11 +13,11 @@ type Database[DatabaseConnectionReference any] interface {
 	GetDatabaseConnection() *DatabaseConnectionReference
 }
 
-type database[DatabaseConnectionReference any] struct {
-	dbConn *DatabaseConnectionReference
+type database struct {
+	dbConn *gorm.DB
 }
 
-func (d database[DatabaseConnectionReference]) GetDatabaseConnection() *DatabaseConnectionReference {
+func (d database) GetDatabaseConnection() *gorm.DB {
 	return d.dbConn
 }
 
@@ -40,7 +40,7 @@ func NewDatabase(config utils.Config) (Database[gorm.DB], error) {
 		return nil, err
 	}
 
-	return database[gorm.DB]{
+	return database{
 		dbConn: db,
 	}, nil
 }
