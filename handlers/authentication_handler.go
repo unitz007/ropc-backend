@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"ropc-backend/model"
 	"ropc-backend/services"
+	"ropc-backend/utils"
 
 	"github.com/gorilla/mux"
 )
@@ -55,7 +56,7 @@ func (a *authenticationHandler) Authenticate(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err != nil {
-		_ = PrintResponse(http.StatusUnauthorized, w, &model.Response[string]{Message: err.Error()})
+		_ = utils.PrintResponse(http.StatusUnauthorized, w, &model.Response[string]{Message: err.Error()})
 		return
 	}
 
@@ -66,7 +67,7 @@ func (a *authenticationHandler) Authenticate(w http.ResponseWriter, r *http.Requ
 		Payload: tokenResponse,
 	}
 
-	_ = PrintResponse[*model.Response[*model.TokenResponse]](http.StatusOK, w, response)
+	_ = utils.PrintResponse[*model.Response[*model.TokenResponse]](http.StatusOK, w, response)
 }
 
 func (a *authenticationHandler) GetMux() *mux.Router {

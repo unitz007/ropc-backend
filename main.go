@@ -17,21 +17,24 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"ropc-backend/handlers"
 	"ropc-backend/kernel"
-	"ropc-backend/middlewares"
 	"ropc-backend/repositories"
 	"ropc-backend/services"
 	"ropc-backend/utils"
 )
 
 const (
-	loginPath          = "/token"
-	appPath            = "/apps"
-	generateSecretPath = "/apps/generate_secret"
-	userPath           = "/users"
+	loginPath           = "/token"
+	appPath             = "/apps"
+	generateSecretPath  = "/apps/generate_secret"
+	userPath            = "/users"
+	tokenHeader         = "Authorization"
+	tokenHeaderErrorMsg = "bearer token is required"
 )
 
 func main() {
@@ -44,7 +47,7 @@ func main() {
 
 	//m := middlewares.NewMiddleware(ctx.Logger)
 
-	defaultMiddlewares := make([]func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request), 0)
+	defaultMiddlewares := kernel.NewMiddleware(ctx.Logger)
 	//defaultMiddlewares = append(defaultMiddlewares, m.PanicRecovery)
 
 	// Repositories
@@ -59,16 +62,40 @@ func main() {
 	applicationHandler := handlers.NewApplicationHandler(applicationRepository, ctx.Router)
 	userHandler := handlers.NewUserHandler(config, userRepository)
 
-	security := middlewares.NewSecurity(config, userRepository)
+	security := func(h func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			accessToken := r.Header.Get(tokenHeader)
+
+			if accessToken == "" {
+				panic(errors.New(tokenHeaderErrorMsg + " for path: " + r.URL.String()))
+			}
+
+			token, err := utils.ValidateToken(accessToken, config.TokenSecret())
+
+			if err != nil {
+				panic(errors.New("token validation failed: " + err.Error()))
+			}
+
+			email := token["sub"].(string)
+			user, err := userRepository.GetUser(email)
+			if err != nil {
+				http.Error(w, "", http.StatusForbidden)
+			}
+
+			r = r.WithContext(context.WithValue(r.Context(), handlers.UserKey, user))
+
+			h(w, r)
+		}
+	}
 
 	// Server
 	server := kernel.NewServer(ctx.Router, defaultMiddlewares)
-	server.RegisterHandler(appPath, http.MethodPost, security.TokenValidation(applicationHandler.CreateApplication))
-	server.RegisterHandler(appPath, http.MethodGet, security.TokenValidation(applicationHandler.GetApplications))
-	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security.TokenValidation(applicationHandler.GetApplication))
-	server.RegisterHandler(appPath+"/{client_id}", http.MethodDelete, security.TokenValidation(applicationHandler.DeleteApplication))
+	server.RegisterHandler(appPath, http.MethodPost, security(applicationHandler.CreateApplication))
+	server.RegisterHandler(appPath, http.MethodGet, security(applicationHandler.GetApplications))
+	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security(applicationHandler.GetApplication))
+	server.RegisterHandler(appPath+"/{client_id}", http.MethodDelete, security(applicationHandler.DeleteApplication))
 
-	server.RegisterHandler(generateSecretPath, http.MethodPut, security.TokenValidation(applicationHandler.GenerateSecret))
+	server.RegisterHandler(generateSecretPath, http.MethodPut, security(applicationHandler.GenerateSecret))
 	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
 	server.RegisterHandler(userPath, http.MethodPost, userHandler.CreateUser)
 	server.RegisterHandler(userPath+"/auth", http.MethodPost, userHandler.AuthenticateUser)

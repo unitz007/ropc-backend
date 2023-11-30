@@ -35,12 +35,12 @@ func (u *userHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := u.userRepository.GetUser(loginRequest.UsernameOrEmail)
 	if err != nil {
-		_ = PrintResponse[any](http.StatusUnauthorized, w, nil)
+		_ = utils.PrintResponse[any](http.StatusUnauthorized, w, nil)
 		return
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginRequest.Password)); err != nil || errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-		_ = PrintResponse[any](http.StatusUnauthorized, w, nil)
+		_ = utils.PrintResponse[any](http.StatusUnauthorized, w, nil)
 		return
 	}
 
@@ -48,7 +48,7 @@ func (u *userHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
 
 	resp := model.NewResponse[*model.TokenResponse]("Authentication successful", &model.TokenResponse{AccessToken: accessToken})
 
-	_ = PrintResponse[*model.Response[*model.TokenResponse]](http.StatusOK, w, resp)
+	_ = utils.PrintResponse[*model.Response[*model.TokenResponse]](http.StatusOK, w, resp)
 }
 
 func NewUserHandler(config utils.Config, userRepository repositories.UserRepository) UserHandler {
@@ -93,7 +93,7 @@ func (u *userHandler) CreateUser(response http.ResponseWriter, request *http.Req
 
 	res := model.NewResponse[any](userCreated, nil)
 
-	_ = PrintResponse(http.StatusCreated, response, res)
+	_ = utils.PrintResponse(http.StatusCreated, response, res)
 }
 
 func (u *userHandler) GetUserDetails(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +112,7 @@ func (u *userHandler) GetUserDetails(w http.ResponseWriter, r *http.Request) {
 			ClientId: claims["client_id"].(string),
 		}
 
-		_ = PrintResponse(http.StatusOK, w, model.NewResponse("User details fetched successfully",
+		_ = utils.PrintResponse(http.StatusOK, w, model.NewResponse("User details fetched successfully",
 			userDetails))
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

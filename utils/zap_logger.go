@@ -9,19 +9,31 @@ type ZapLogger struct {
 }
 
 func (z ZapLogger) Info(v string) {
-	z.zap.Info(v)
+	defer func(zap *zap.Logger) {
+		_ = zap.Sync()
+	}(z.zap)
+	z.zap.Sugar().Info(v)
 }
 
 func (z ZapLogger) Error(v string) {
-	z.zap.Error(v)
+	defer func(zap *zap.Logger) {
+		_ = zap.Sync()
+	}(z.zap)
+	z.zap.Sugar().Error(v)
 }
 
 func (z ZapLogger) Warn(v string) {
-	z.zap.Warn(v)
+	defer func(zap *zap.Logger) {
+		_ = zap.Sync()
+	}(z.zap)
+	z.zap.Sugar().Warn(v)
 }
 
 func (z ZapLogger) Fatal(v string) {
-	z.zap.Fatal(v)
+	defer func(zap *zap.Logger) {
+		_ = zap.Sync()
+	}(z.zap)
+	z.zap.Sugar().Fatal(v)
 }
 
 func NewZapLogger(config Config) *ZapLogger {

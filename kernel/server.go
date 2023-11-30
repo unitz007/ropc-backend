@@ -10,7 +10,7 @@ import (
 type Server interface {
 	Start(address string) error
 	RegisterHandler(path, method string, handler func(w http.ResponseWriter, r *http.Request))
-	AttachMiddleware(middleware func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request)) Server
+	//AttachMiddleware(middleware func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request)) Server
 }
 
 type api struct {
@@ -21,15 +21,15 @@ type api struct {
 type server struct {
 	router      Router
 	handlers    []api
-	middlewares []func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request)
+	middlewares Middleware
 }
 
-func (s *server) AttachMiddleware(middleware func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request)) Server {
-	s.middlewares = append(s.middlewares, middleware)
-	return s
-}
+//func (s *server) AttachMiddleware(middleware func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request)) Server {
+//	//s.middlewares = append(s.middlewares, middleware)
+//	return s
+//}
 
-func NewServer(router Router, defaultMiddlewares []func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request)) Server {
+func NewServer(router Router, defaultMiddlewares Middleware) Server {
 
 	return &server{
 		router:      router,
@@ -73,14 +73,14 @@ func (s *server) Start(addr string) error {
 
 func (s *server) RegisterHandler(path, method string, handler func(w http.ResponseWriter, r *http.Request)) {
 
-	for _, m := range s.middlewares {
-		m(handler)
-	}
+	//for _, m := range s.middlewares {
+	//	h := m(handler)
+	//}
 
 	var l Logger = utils.NewZapLogger(utils.NewConfig())
 
 	//newRelicApp := utils.NewRelicInstance().App
-	//fHandler := middlewares.RequestLogger(middlewares.PanicRecovery(handler))
+	fHandler := s.middlewares.RequestLogging(s.middlewares.PanicHandler(handler))
 	//
 	//// register new relic monitor
 	//newrelic.WrapHandleFunc(newRelicApp, path, fHandler)
@@ -89,13 +89,13 @@ func (s *server) RegisterHandler(path, method string, handler func(w http.Respon
 
 	switch method {
 	case http.MethodGet:
-		s.router.Get(path, handler)
+		s.router.Get(path, fHandler)
 	case http.MethodPost:
-		s.router.Post(path, handler)
+		s.router.Post(path, fHandler)
 	case http.MethodPut:
-		s.router.Put(path, handler)
+		s.router.Put(path, fHandler)
 	case http.MethodDelete:
-		s.router.Delete(path, handler)
+		s.router.Delete(path, fHandler)
 	default:
 		m := fmt.Sprintf("%s not registered: %s", path, fmt.Sprintf("%s is not a upported HTTP method type.", method))
 		l.Warn(m)
