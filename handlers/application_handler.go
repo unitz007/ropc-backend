@@ -162,8 +162,7 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 
 	alreadyExists, _ := a.applicationRepository.GetByNameAndUserId(request.Name, user.ID)
 	if alreadyExists != nil {
-		_ = utils.PrintResponse[any](409, w, nil)
-		return
+		panic(errors.New("application with this name already exists"))
 	}
 
 	app := &model.Application{
