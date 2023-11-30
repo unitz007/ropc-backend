@@ -48,7 +48,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: ropc-container
-          image: unitz007/ropc:1.1
+          image: unitz007/ropc:1.2
           imagePullPolicy: "Always"
           ports:
             - containerPort: 8080
@@ -75,3 +75,5 @@ spec:
               value: "3000"
             - name: ROPC_SERVER_PORT
               value: "8080"
+            - name: ROPC_ENVIRONMENT
+              value: PRODUCTION
