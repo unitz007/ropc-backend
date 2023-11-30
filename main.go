@@ -17,17 +17,16 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"ropc-backend/handlers"
+	"ropc-backend/kernel"
 	"ropc-backend/middlewares"
 	"ropc-backend/repositories"
-	"ropc-backend/routers"
 	"ropc-backend/services"
 	"ropc-backend/utils"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 const (
@@ -40,37 +39,27 @@ const (
 func main() {
 
 	config := utils.NewConfig()
-	logger := utils.NewZapLogger(config)
-	var router routers.Router
-
-	switch config.Mux() {
-	case "gorilla_mux":
-		router = routers.NewRouter(mux.NewRouter())
-	case "chi_router":
-		router = routers.NewChiRouter(chi.NewRouter())
-	default:
-		s := fmt.Sprintf("%s is not a supported Mux router", config.Mux())
-		utils.NewLogger().Fatal(s)
+	ctx, err := kernel.NewContext[gorm.DB](config)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	DB := repositories.NewDataBase(config)
-
 	// Repositories
-	applicationRepository := repositories.NewApplicationRepository(DB)
-	userRepository := repositories.NewUserRepository(DB)
+	applicationRepository := repositories.NewApplicationRepository(ctx.Database)
+	userRepository := repositories.NewUserRepository(ctx.Database)
 
 	// services
 	authenticatorService := services.NewAuthenticatorService(applicationRepository, config)
 
 	// Handlers
 	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService)
-	applicationHandler := handlers.NewApplicationHandler(applicationRepository, router)
+	applicationHandler := handlers.NewApplicationHandler(applicationRepository, ctx.Router)
 	userHandler := handlers.NewUserHandler(config, userRepository)
 
 	security := middlewares.NewSecurity(config, userRepository)
 
 	// Server
-	server := NewServer(router)
+	server := kernel.NewServer(ctx.Router)
 	server.RegisterHandler(appPath, http.MethodPost, security.TokenValidation(applicationHandler.CreateApplication))
 	server.RegisterHandler(appPath, http.MethodGet, security.TokenValidation(applicationHandler.GetApplications))
 	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security.TokenValidation(applicationHandler.GetApplication))
@@ -83,5 +72,5 @@ func main() {
 
 	// swagger
 
-	logger.Fatal(server.Start(":" + config.ServerPort()).Error())
+	ctx.Logger.Fatal(server.Start(":" + config.ServerPort()).Error())
 }

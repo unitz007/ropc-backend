@@ -4,37 +4,37 @@ import (
 	"go.uber.org/zap"
 )
 
-type zapLogger struct {
+type ZapLogger struct {
 	zap *zap.Logger
 }
 
-func (z zapLogger) Info(v string) {
+func (z ZapLogger) Info(v string) {
 	z.zap.Info(v)
 }
 
-func (z zapLogger) Error(v string) {
+func (z ZapLogger) Error(v string) {
 	z.zap.Error(v)
 }
 
-func (z zapLogger) Warn(v string) {
+func (z ZapLogger) Warn(v string) {
 	z.zap.Warn(v)
 }
 
-func (z zapLogger) Fatal(v string) {
+func (z ZapLogger) Fatal(v string) {
 	z.zap.Fatal(v)
 }
 
-func NewZapLogger(config Config) Logger {
+func NewZapLogger(config Config) *ZapLogger {
 	env := config.Environment()
 	if env == "development" {
 		z, _ := zap.NewDevelopment()
-		return zapLogger{zap: z}
+		return &ZapLogger{zap: z}
 	} else if env == "production" {
 		z, _ := zap.NewProduction()
-		return zapLogger{zap: z}
+		return &ZapLogger{zap: z}
 	} else {
 		z, _ := zap.NewProduction()
-		return zapLogger{zap: z}
+		return &ZapLogger{zap: z}
 
 	}
 

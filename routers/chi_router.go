@@ -32,7 +32,7 @@ func (mux *ChiRouter) Name() string {
 	return "Chi Router"
 }
 
-func NewChiRouter(router *chi.Mux) Router {
+func NewChiRouter(router *chi.Mux) *ChiRouter {
 	return &ChiRouter{router: router}
 }
 

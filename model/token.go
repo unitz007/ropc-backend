@@ -3,7 +3,6 @@ package model
 import (
 	"fmt"
 	"net"
-	"ropc-backend/utils"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -13,23 +12,21 @@ type claims map[string]interface{}
 
 type AccessToken struct {
 	claims claims
-	config utils.Config
 }
 
-func NewAccessToken(subject string, config utils.Config) *AccessToken {
+func NewAccessToken(subject string, expiry int, issuer string) *AccessToken {
 
 	issuedAt := time.Now().Unix()
-	expiresAt := time.Now().Add(time.Duration(config.TokenExpiry()) * time.Minute).Unix()
+	expiresAt := time.Now().Add(time.Duration(expiry) * time.Minute).Unix()
 
 	claims := claims{
-		"iss": fmt.Sprintf("http://%s:%s", getIp(), config.ServerPort()),
+		"iss": issuer,
 		"sub": subject,
 		"iat": issuedAt,
 		"exp": expiresAt,
 	}
 	return &AccessToken{
 		claims: claims,
-		config: config,
 	}
 }
 
@@ -37,8 +34,8 @@ func (c *claims) Valid() error {
 	return nil
 }
 
-func (t *AccessToken) Sign() string {
-	signedToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, &t.claims).SignedString([]byte(t.config.TokenSecret()))
+func (t *AccessToken) Sign(secret string) string {
+	signedToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, &t.claims).SignedString([]byte(secret))
 	if err != nil {
 		panic(fmt.Errorf("failed to sign token: %v", err))
 	}

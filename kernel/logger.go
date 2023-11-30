@@ -1,10 +1,7 @@
-package utils
+package kernel
 
 import (
 	"log"
-	"os"
-
-	"github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter"
 )
 
 const (
@@ -29,14 +26,14 @@ func (l logger) Fatal(v string) {
 	l.l.Fatal(v)
 }
 
-func NewLogger() Logger {
-	newRelicApp := NewRelicInstance()
-	writer := logWriter.New(os.Stdout, newRelicApp.App)
-	l := log.New(&writer, "", log.Default().Flags())
-
-	return &logger{l}
-
-}
+//func NewLogger() Logger {
+//	newRelicApp := NewRelicInstance()
+//	writer := logWriter.New(os.Stdout, newRelicApp.App)
+//	l := log.New(&writer, "", log.Default().Flags())
+//
+//	return &logger{l}
+//
+//}
 
 func (l logger) Error(v string) {
 

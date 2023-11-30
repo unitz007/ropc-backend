@@ -71,7 +71,7 @@ func (e config) TokenExpiry() int {
 
 	v, err := strconv.Atoi(getEnvironmentVariable("ROPC_TOKEN_EXPIRY"))
 	if err != nil {
-		NewLogger().Fatal("Error getting token expiry")
+		log.Fatal("Error getting token expiry")
 	}
 
 	return v
