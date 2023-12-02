@@ -3,7 +3,6 @@ package kernel
 import (
 	"fmt"
 	"net/http"
-	"ropc-backend/utils"
 	"time"
 )
 
@@ -19,7 +18,7 @@ type api struct {
 }
 
 type server struct {
-	router      Router
+	*Context
 	handlers    []api
 	middlewares Middleware
 }
@@ -29,10 +28,10 @@ type server struct {
 //	return s
 //}
 
-func NewServer(router Router, defaultMiddlewares Middleware) Server {
+func NewServer(ctx *Context, defaultMiddlewares Middleware) Server {
 
 	return &server{
-		router:      router,
+		Context:     ctx,
 		handlers:    make([]api, 0),
 		middlewares: defaultMiddlewares,
 	}
@@ -40,7 +39,7 @@ func NewServer(router Router, defaultMiddlewares Middleware) Server {
 
 func (s *server) Start(addr string) error {
 
-	var l Logger = utils.NewZapLogger(utils.NewConfig())
+	//var l Logger = utils.NewZapLogger(utils.NewConfig())
 
 	PORT := func() string {
 		index := 0
@@ -56,12 +55,12 @@ func (s *server) Start(addr string) error {
 
 	go func() {
 		time.Sleep(time.Millisecond * 5)
-		l.Info(fmt.Sprintf("%d handler(s) registered", len(s.handlers)))
-		msg := fmt.Sprintf("Server started on port %s, with %s.", PORT, s.router.Name())
-		l.Info(msg)
+		s.Logger.Info(fmt.Sprintf("%d handler(s) registered", len(s.handlers)))
+		msg := fmt.Sprintf("Server started on port %s, with %s.", PORT, s.Router.Name())
+		s.Logger.Info(msg)
 	}()
 
-	err := s.router.Serve(addr)
+	err := s.Router.Serve(addr)
 
 	if err != nil {
 		return err
@@ -77,7 +76,7 @@ func (s *server) RegisterHandler(path, method string, handler func(w http.Respon
 	//	h := m(handler)
 	//}
 
-	var l Logger = utils.NewZapLogger(utils.NewConfig())
+	//var l Logger = utils.NewZapLogger(utils.NewConfig())
 
 	//newRelicApp := utils.NewRelicInstance().App
 	fHandler := s.middlewares.RequestLogging(s.middlewares.PanicHandler(handler))
@@ -89,16 +88,16 @@ func (s *server) RegisterHandler(path, method string, handler func(w http.Respon
 
 	switch method {
 	case http.MethodGet:
-		s.router.Get(path, fHandler)
+		s.Router.Get(path, fHandler)
 	case http.MethodPost:
-		s.router.Post(path, fHandler)
+		s.Router.Post(path, fHandler)
 	case http.MethodPut:
-		s.router.Put(path, fHandler)
+		s.Router.Put(path, fHandler)
 	case http.MethodDelete:
-		s.router.Delete(path, fHandler)
+		s.Router.Delete(path, fHandler)
 	default:
 		m := fmt.Sprintf("%s not registered: %s", path, fmt.Sprintf("%s is not a upported HTTP method type.", method))
-		l.Warn(m)
+		s.Logger.Warn(m)
 	}
 
 	h := api{

@@ -2,6 +2,7 @@ package authenticators
 
 import (
 	"errors"
+	"ropc-backend/kernel"
 	"ropc-backend/model"
 	"ropc-backend/repositories"
 
@@ -13,6 +14,7 @@ type UserAuthenticator interface {
 }
 
 type userAuthenticator struct {
+	kernel.Context
 	userRepository repositories.UserRepository
 }
 

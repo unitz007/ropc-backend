@@ -18,10 +18,10 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	db kernel.Database[gorm.DB]
+	db kernel.Database
 }
 
-func NewUserRepository(database kernel.Database[gorm.DB]) UserRepository {
+func NewUserRepository(database kernel.Database) UserRepository {
 	return &userRepository{
 		db: database,
 	}
@@ -30,7 +30,12 @@ func NewUserRepository(database kernel.Database[gorm.DB]) UserRepository {
 func (selfC userRepository) GetUser(username string) (*model.User, error) {
 	var user *model.User
 
-	err := selfC.db.GetDatabaseConnection().Model(&model.User{}).Where("username = ? OR email = ?", username, username).First(&user).Error
+	err := selfC.db.GetDatabaseConnection().(*gorm.DB).
+		Model(&model.User{}).
+		Where("username = ? OR email = ?", username, username).
+		First(&user).
+		Error
+
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New("invalid user credentials")
@@ -44,7 +49,10 @@ func (selfC userRepository) CreateUser(user *model.User) (*model.User, error) {
 	hashed, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 0)
 	user.Password = string(hashed)
 
-	err := selfC.db.GetDatabaseConnection().Create(user).Error
+	err := selfC.db.GetDatabaseConnection().(*gorm.DB).
+		Create(user).
+		Error
+
 	if err != nil {
 		if strings.Contains(err.Error(), "username") {
 			return nil, errors.New("username already exists")
@@ -61,7 +69,10 @@ func (selfC userRepository) CreateUser(user *model.User) (*model.User, error) {
 func (selfC userRepository) GetUserByUsernameOrEmail(username, email string) (*model.User, error) {
 	var user model.User
 
-	err := selfC.db.GetDatabaseConnection().Where("username = ? OR email = ?", username, email).First(&user).Error
+	err := selfC.db.GetDatabaseConnection().(*gorm.DB).
+		Where("username = ? OR email = ?", username, email).
+		First(&user).
+		Error
 
 	if err != nil {
 		return nil, errors.New("could not execute query")

@@ -45,11 +45,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//m := middlewares.NewMiddleware(ctx.Logger)
-
 	defaultMiddlewares := kernel.NewMiddleware(ctx.Logger)
-	//defaultMiddlewares = append(defaultMiddlewares, m.PanicRecovery)
-
 	// Repositories
 	applicationRepository := repositories.NewApplicationRepository(ctx.Database)
 	userRepository := repositories.NewUserRepository(ctx.Database)
@@ -89,7 +85,7 @@ func main() {
 	}
 
 	// Server
-	server := kernel.NewServer(ctx.Router, defaultMiddlewares)
+	server := kernel.NewServer(ctx, defaultMiddlewares)
 	server.RegisterHandler(appPath, http.MethodPost, security(applicationHandler.CreateApplication))
 	server.RegisterHandler(appPath, http.MethodGet, security(applicationHandler.GetApplications))
 	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security(applicationHandler.GetApplication))

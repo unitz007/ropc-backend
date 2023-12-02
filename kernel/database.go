@@ -9,19 +9,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type Database[DatabaseConnectionReference any] interface {
-	GetDatabaseConnection() *DatabaseConnectionReference
+type Database interface {
+	GetDatabaseConnection() any
 }
 
 type database struct {
 	dbConn *gorm.DB
 }
 
-func (d database) GetDatabaseConnection() *gorm.DB {
+func (d database) GetDatabaseConnection() any {
 	return d.dbConn
 }
 
-func NewDatabase(config utils.Config) (Database[gorm.DB], error) {
+func NewDatabase(config utils.Config) (Database, error) {
 
 	host := config.DatabaseHost()
 	user := config.DatabaseUser()

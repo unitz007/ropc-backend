@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"ropc-backend/kernel"
 	"ropc-backend/model"
 	"ropc-backend/repositories"
 	"ropc-backend/utils"
@@ -19,6 +20,7 @@ type AuthenticatorService interface {
 }
 
 type authenticatorService struct {
+	kernel.Context
 	applicationRepository repositories.ApplicationRepository
 	config                utils.Config
 }

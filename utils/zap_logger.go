@@ -47,7 +47,6 @@ func NewZapLogger(config Config) *ZapLogger {
 	} else {
 		z, _ := zap.NewProduction()
 		return &ZapLogger{zap: z}
-
 	}
 
 }
