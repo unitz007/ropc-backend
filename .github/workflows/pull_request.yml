@@ -1,7 +1,7 @@
 name: CI
 
 on:
-  push:
+  pull_request:
     branches: [ "main" ]
 
 jobs:
@@ -9,8 +9,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    env:
-      tag: 1.2
 
     steps:
       - uses: actions/checkout@v3
@@ -29,10 +27,3 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build the Docker image
-        run: docker build --tag unitz007/ropc:${{ env.tag }} .
-
-
-      - name: Push the Docker image
-        run: docker push unitz007/ropc:${{ env.tag }}
