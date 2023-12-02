@@ -22,14 +22,14 @@ type ApplicationRepository interface {
 }
 
 type applicationRepository struct {
-	db kernel.Database[gorm.DB]
+	db kernel.Database
 }
 
 func (a applicationRepository) GetByNameAndUserId(name string, userId uint) (*model.Application, error) {
 
 	var client model.Application
 
-	err := a.db.GetDatabaseConnection().
+	err := a.db.GetDatabaseConnection().(*gorm.DB).
 		Model(&model.Application{}).
 		Where("name = ? and user_id = ?", name, userId).
 		First(&client).
@@ -43,7 +43,7 @@ func (a applicationRepository) GetByNameAndUserId(name string, userId uint) (*mo
 }
 
 func (a applicationRepository) Delete(id uint) error {
-	return a.db.GetDatabaseConnection().
+	return a.db.GetDatabaseConnection().(*gorm.DB).
 		Unscoped().
 		Model(&model.Application{}).
 		Delete("id = ?", id).
@@ -51,7 +51,7 @@ func (a applicationRepository) Delete(id uint) error {
 }
 
 func (a applicationRepository) Update(app *model.Application) (*model.Application, error) {
-	err := a.db.GetDatabaseConnection().
+	err := a.db.GetDatabaseConnection().(*gorm.DB).
 		Model(app).
 		Where("client_id = ?", app.ClientId).
 		Update("client_secret", app.ClientSecret).
@@ -64,7 +64,7 @@ func (a applicationRepository) Update(app *model.Application) (*model.Applicatio
 	return app, nil
 }
 
-func NewApplicationRepository(db kernel.Database[gorm.DB]) ApplicationRepository {
+func NewApplicationRepository(db kernel.Database) ApplicationRepository {
 	return &applicationRepository{db: db}
 }
 
@@ -72,7 +72,7 @@ func (a applicationRepository) GetByClientIdAndUserId(clientId string, userId ui
 
 	var client model.Application
 
-	err := a.db.GetDatabaseConnection().
+	err := a.db.GetDatabaseConnection().(*gorm.DB).
 		Model(&model.Application{}).
 		Where("client_id = ? AND user_id = ?", clientId, userId).
 		First(&client).
@@ -89,7 +89,7 @@ func (a applicationRepository) GetByClientId(clientId string) (*model.Applicatio
 
 	var client model.Application
 
-	err := a.db.GetDatabaseConnection().
+	err := a.db.GetDatabaseConnection().(*gorm.DB).
 		Model(&model.Application{}).
 		Where("client_id = ?", clientId).
 		First(&client).
@@ -106,7 +106,7 @@ func (a applicationRepository) GetByName(name string) (*model.Application, error
 
 	var client model.Application
 
-	err := a.db.GetDatabaseConnection().
+	err := a.db.GetDatabaseConnection().(*gorm.DB).
 		Model(&model.Application{}).
 		Where("name = ?", name).
 		First(&client).
@@ -123,7 +123,8 @@ func (a applicationRepository) GetAll(userId uint) []model.Application {
 
 	var clients []model.Application
 
-	a.db.GetDatabaseConnection().Model(model.Application{}).
+	a.db.GetDatabaseConnection().(*gorm.DB).
+		Model(model.Application{}).
 		Where("user_id = ?", userId).
 		Scan(&clients)
 
@@ -133,7 +134,7 @@ func (a applicationRepository) GetAll(userId uint) []model.Application {
 func (a applicationRepository) Create(client *model.Application) error {
 	client.ClientId = uuid.NewString()
 
-	err := a.db.GetDatabaseConnection().Create(client).Error
+	err := a.db.GetDatabaseConnection().(*gorm.DB).Create(client).Error
 
 	if err != nil {
 		if strings.Contains(err.Error(), "name") {

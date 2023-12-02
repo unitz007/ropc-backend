@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Server interface {
@@ -20,7 +18,7 @@ type api struct {
 }
 
 type server struct {
-	*Context[gorm.DB]
+	*Context
 	handlers    []api
 	middlewares Middleware
 }
@@ -30,7 +28,7 @@ type server struct {
 //	return s
 //}
 
-func NewServer(ctx *Context[gorm.DB], defaultMiddlewares Middleware) Server {
+func NewServer(ctx *Context, defaultMiddlewares Middleware) Server {
 
 	return &server{
 		Context:     ctx,

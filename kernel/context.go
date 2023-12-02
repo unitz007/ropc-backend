@@ -7,16 +7,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/mux"
-	"gorm.io/gorm"
 )
 
-type Context[DatabaseConnectionReference any] struct {
-	Database Database[DatabaseConnectionReference]
+type Context struct {
+	Database Database
 	Router   Router
 	Logger   Logger
 }
 
-func NewContext(config utils.Config) (*Context[gorm.DB], error) {
+func NewContext(config utils.Config) (*Context, error) {
 
 	db, err := NewDatabase(config)
 	if err != nil {
@@ -38,7 +37,7 @@ func NewContext(config utils.Config) (*Context[gorm.DB], error) {
 		return nil, err
 	}
 
-	context := &Context[gorm.DB]{
+	context := &Context{
 		Database: db,
 		Logger:   utils.NewZapLogger(config),
 		Router:   router,

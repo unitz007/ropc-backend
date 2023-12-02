@@ -14,7 +14,7 @@ type UserAuthenticator interface {
 }
 
 type userAuthenticator struct {
-	kernel.Context[any]
+	kernel.Context
 	userRepository repositories.UserRepository
 }
 

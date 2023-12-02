@@ -20,7 +20,7 @@ type AuthenticatorService interface {
 }
 
 type authenticatorService struct {
-	kernel.Context[any]
+	kernel.Context
 	applicationRepository repositories.ApplicationRepository
 	config                utils.Config
 }
