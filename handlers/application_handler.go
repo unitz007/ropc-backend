@@ -49,7 +49,9 @@ func (a *applicationHandler) DeleteApplication(response http.ResponseWriter, req
 		panic(errors.New("failed to delete application"))
 	}
 
-	_ = utils.PrintResponse[any](http.StatusOK, response, nil)
+	body := *model.NewResponse[any]("application deleted successfully", nil)
+
+	_ = utils.PrintResponse[model.Response[any]](http.StatusOK, response, body)
 }
 
 func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Request) {

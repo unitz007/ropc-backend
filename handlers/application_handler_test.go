@@ -350,6 +350,7 @@ func TestDeleteApplication(t *testing.T) {
 		router.AssertCalled(t, "GetPathVariable", request, "client_id")
 		applicationRepository.AssertCalled(t, "GetByClientIdAndUserId", "test_client_id", testApp.UserID)
 		applicationRepository.AssertCalled(t, "Delete", testApp.ID)
+
 	})
 
 	t.Run("should panic with 'failed to delete application' if delete application fails", func(t *testing.T) {
