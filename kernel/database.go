@@ -10,18 +10,83 @@ import (
 )
 
 type Database interface {
-	GetDatabaseConnection() any
+	DatabaseConnection() DataBaseConnection[any]
 }
 
-type database struct {
+type DataBaseConnection[Model any] interface {
+	Create(entity Model) (*Model, error)
+	GetById(id int) (*Model, error)
+	GetList() ([]Model, error)
+	CustomSingleQuery(query string, vals ...any) (*Model, error)
+	CustomListQuery(query string, vals ...any) ([]Model, error)
+	Delete(id int) error
+}
+
+type database[Model any] struct {
 	dbConn *gorm.DB
 }
 
-func (d database) GetDatabaseConnection() any {
+func (d database[Model]) Delete(id int) error {
+
+	var m Model
+
+	return d.dbConn.Unscoped().
+		Model(m).
+		Delete("id = ?", id).
+		Error
+}
+
+func (d database[Model]) CustomSingleQuery(query string, cond ...any) (*Model, error) {
+
+	var m Model
+
+	err := d.dbConn.
+		Model(m).
+		Where(query, cond).
+		First(&m).
+		Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &m, nil
+}
+
+func (d database[Model]) CustomListQuery(query string, cond ...any) ([]Model, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d database[Model]) Create(m Model) (*Model, error) {
+	if err := d.dbConn.Create(m).Error; err != nil {
+		return nil, err
+	}
+
+	return &m, nil
+}
+
+func (d database[Model]) GetById(id int) (*Model, error) {
+
+	var res Model
+	err := d.dbConn.Where("id = ?", id).First(res).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func (d database[Model]) GetList() ([]Model, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d database[Model]) DatabaseConnection() *gorm.DB {
 	return d.dbConn
 }
 
-func NewDatabase(config utils.Config) (Database, error) {
+func NewDatabase[Model any](config utils.Config) (DataBaseConnection[Model], error) {
 
 	host := config.DatabaseHost()
 	user := config.DatabaseUser()
@@ -40,7 +105,7 @@ func NewDatabase(config utils.Config) (Database, error) {
 		return nil, err
 	}
 
-	return database{
+	return database[Model]{
 		dbConn: db,
 	}, nil
 }

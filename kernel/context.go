@@ -10,7 +10,7 @@ import (
 )
 
 type Context struct {
-	Database Database
+	Database DataBaseConnection
 	Router   Router
 	Logger   Logger
 }

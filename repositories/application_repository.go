@@ -27,19 +27,13 @@ type applicationRepository struct {
 
 func (a applicationRepository) GetByNameAndUserId(name string, userId uint) (*model.Application, error) {
 
-	var client model.Application
-
-	err := a.db.GetDatabaseConnection().(*gorm.DB).
-		Model(&model.Application{}).
-		Where("name = ? and user_id = ?", name, userId).
-		First(&client).
-		Error
+	client, err := a.db.DatabaseConnection().CustomSingleQuery("name = ? and user_id = ?", name, userId)
 
 	if err != nil {
 		return nil, errors.New("application not found")
 	}
 
-	return &client, nil
+	return client.(*model.Application), nil
 }
 
 func (a applicationRepository) Delete(id uint) error {
@@ -89,7 +83,7 @@ func (a applicationRepository) GetByClientId(clientId string) (*model.Applicatio
 
 	var client model.Application
 
-	err := a.db.GetDatabaseConnection().(*gorm.DB).
+	err := a.db.DatabaseConnection().(*gorm.DB).
 		Model(&model.Application{}).
 		Where("client_id = ?", clientId).
 		First(&client).
