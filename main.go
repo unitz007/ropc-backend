@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"ropc-backend/handlers"
@@ -44,6 +45,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Println("rnfnjf")
 
 	defaultMiddlewares := kernel.NewMiddleware(ctx.Logger())
 	// Repositories
