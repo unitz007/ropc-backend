@@ -45,7 +45,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	defaultMiddlewares := kernel.NewMiddleware(ctx.Logger())
+	defaultMiddlewares := kernel.NewMiddleware(ctx)
 	// Repositories
 	applicationRepository := repositories.NewApplicationRepository(ctx.Database())
 	userRepository := repositories.NewUserRepository(ctx.Database())
