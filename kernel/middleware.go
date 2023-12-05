@@ -12,13 +12,12 @@ type Middleware interface {
 	RequestLogging(h func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request)
 }
 type middleware struct {
-	logger Logger
-	config utils.Config
+	Context
 }
 
-func NewMiddleware(logger Logger) Middleware {
+func NewMiddleware(ctx Context) Middleware {
 	return &middleware{
-		logger: logger,
+		ctx,
 	}
 }
 
@@ -30,7 +29,7 @@ func (m middleware) PanicHandler(h func(w http.ResponseWriter, r *http.Request))
 				if e, ok := err.(error); ok {
 					errorMsg = e.Error()
 				}
-				m.logger.Error(errorMsg)
+				m.Logger().Error(errorMsg)
 				_ = utils.PrintResponse(http.StatusBadRequest, w, model.NewResponse[any](errorMsg, nil))
 			}
 		}()
@@ -43,7 +42,7 @@ func (m middleware) RequestLogging(h func(w http.ResponseWriter, r *http.Request
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		s := fmt.Sprintf("%v request to %v", r.Method, r.URL.Path)
-		m.logger.Info(s)
+		m.Logger().Info(s)
 		h(w, r)
 
 	}
