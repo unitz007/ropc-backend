@@ -13,26 +13,6 @@ type Server struct {
 	mock.Mock
 }
 
-// AttachMiddleware provides a mock function with given fields: middleware
-func (_m *Server) AttachMiddleware(middleware func(http.ResponseWriter, *http.Request) func(http.ResponseWriter, *http.Request)) Server {
-	ret := _m.Called(middleware)
-
-	if len(ret) == 0 {
-		panic("no return value specified for AttachMiddleware")
-	}
-
-	var r0 Server
-	if rf, ok := ret.Get(0).(func(func(http.ResponseWriter, *http.Request) func(http.ResponseWriter, *http.Request)) Server); ok {
-		r0 = rf(middleware)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(Server)
-		}
-	}
-
-	return r0
-}
-
 // RegisterHandler provides a mock function with given fields: path, method, handler
 func (_m *Server) RegisterHandler(path string, method string, handler func(http.ResponseWriter, *http.Request)) {
 	_m.Called(path, method, handler)

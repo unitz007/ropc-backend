@@ -45,17 +45,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	defaultMiddlewares := kernel.NewMiddleware(ctx.Logger)
+	defaultMiddlewares := kernel.NewMiddleware(ctx.Logger())
 	// Repositories
-	applicationRepository := repositories.NewApplicationRepository(ctx.Database)
-	userRepository := repositories.NewUserRepository(ctx.Database)
+	applicationRepository := repositories.NewApplicationRepository(ctx.Database())
+	userRepository := repositories.NewUserRepository(ctx.Database())
 
 	// services
 	authenticatorService := services.NewAuthenticatorService(applicationRepository, config)
 
 	// Handlers
-	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService)
-	applicationHandler := handlers.NewApplicationHandler(applicationRepository, ctx.Router)
+	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService, ctx)
+	applicationHandler := handlers.NewApplicationHandler(applicationRepository, ctx)
 	userHandler := handlers.NewUserHandler(config, userRepository)
 
 	security := func(h func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {
@@ -98,5 +98,5 @@ func main() {
 
 	// swagger
 
-	ctx.Logger.Fatal(server.Start(":" + config.ServerPort()).Error())
+	ctx.Logger().Fatal(server.Start(":" + config.ServerPort()).Error())
 }

@@ -18,7 +18,7 @@ type api struct {
 }
 
 type server struct {
-	*Context
+	Context
 	handlers    []api
 	middlewares Middleware
 }
@@ -28,7 +28,7 @@ type server struct {
 //	return s
 //}
 
-func NewServer(ctx *Context, defaultMiddlewares Middleware) Server {
+func NewServer(ctx Context, defaultMiddlewares Middleware) Server {
 
 	return &server{
 		Context:     ctx,
@@ -55,12 +55,12 @@ func (s *server) Start(addr string) error {
 
 	go func() {
 		time.Sleep(time.Millisecond * 5)
-		s.Logger.Info(fmt.Sprintf("%d handler(s) registered", len(s.handlers)))
-		msg := fmt.Sprintf("Server started on port %s, with %s.", PORT, s.Router.Name())
-		s.Logger.Info(msg)
+		s.Logger().Info(fmt.Sprintf("%d handler(s) registered", len(s.handlers)))
+		msg := fmt.Sprintf("Server started on port %s, with %s.", PORT, s.Router().Name())
+		s.Logger().Info(msg)
 	}()
 
-	err := s.Router.Serve(addr)
+	err := s.Router().Serve(addr)
 
 	if err != nil {
 		return err
@@ -88,16 +88,16 @@ func (s *server) RegisterHandler(path, method string, handler func(w http.Respon
 
 	switch method {
 	case http.MethodGet:
-		s.Router.Get(path, fHandler)
+		s.Router().Get(path, fHandler)
 	case http.MethodPost:
-		s.Router.Post(path, fHandler)
+		s.Router().Post(path, fHandler)
 	case http.MethodPut:
-		s.Router.Put(path, fHandler)
+		s.Router().Put(path, fHandler)
 	case http.MethodDelete:
-		s.Router.Delete(path, fHandler)
+		s.Router().Delete(path, fHandler)
 	default:
 		m := fmt.Sprintf("%s not registered: %s", path, fmt.Sprintf("%s is not a upported HTTP method type.", method))
-		s.Logger.Warn(m)
+		s.Logger().Warn(m)
 	}
 
 	h := api{

@@ -22,13 +22,13 @@ type ApplicationHandler interface {
 }
 
 type applicationHandler struct {
-	router                kernel.Router
+	kernel.Context
 	applicationRepository repositories.ApplicationRepository
 }
 
 func (a *applicationHandler) DeleteApplication(response http.ResponseWriter, request *http.Request) {
 
-	err, clientId := a.router.GetPathVariable(request, "client_id")
+	err, clientId := a.Router().GetPathVariable(request, "client_id")
 	if err != nil {
 		panic(err)
 	}
@@ -55,7 +55,7 @@ func (a *applicationHandler) DeleteApplication(response http.ResponseWriter, req
 }
 
 func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Request) {
-	err, clientId := a.router.GetPathVariable(r, "client_id")
+	err, clientId := a.Router().GetPathVariable(r, "client_id")
 	if err != nil {
 		_ = utils.PrintResponse[any](404, w, nil)
 		return
@@ -102,7 +102,10 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 		panic(errors.New("invalid request body"))
 	}
 
-	user, _ := GetUserFromContext(r.Context())
+	user, err := GetUserFromContext(r.Context())
+	if err != nil {
+		panic(errors.New("forbidden: not allowed to make this request"))
+	}
 
 	app, err := a.applicationRepository.GetByClientIdAndUserId(request.ClientId, user.ID)
 	if err != nil {
@@ -139,9 +142,9 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 
 }
 
-func NewApplicationHandler(applicationRepository repositories.ApplicationRepository, router kernel.Router) ApplicationHandler {
+func NewApplicationHandler(applicationRepository repositories.ApplicationRepository, ctx kernel.Context) ApplicationHandler {
 	return &applicationHandler{
-		router:                router,
+		Context:               ctx,
 		applicationRepository: applicationRepository,
 	}
 }

@@ -9,13 +9,31 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Context struct {
-	Database Database
-	Router   Router
-	Logger   Logger
+type Context interface {
+	Database() Database
+	Router() Router
+	Logger() Logger
 }
 
-func NewContext(config utils.Config) (*Context, error) {
+type context struct {
+	db     Database
+	router Router
+	logger Logger
+}
+
+func (c context) Database() Database {
+	return c.db
+}
+
+func (c context) Router() Router {
+	return c.router
+}
+
+func (c context) Logger() Logger {
+	return c.logger
+}
+
+func NewContext(config utils.Config) (Context, error) {
 
 	db, err := NewDatabase(config)
 	if err != nil {
@@ -37,10 +55,10 @@ func NewContext(config utils.Config) (*Context, error) {
 		return nil, err
 	}
 
-	context := &Context{
-		Database: db,
-		Logger:   utils.NewZapLogger(config),
-		Router:   router,
+	context := context{
+		db:     db,
+		logger: utils.NewZapLogger(config),
+		router: router,
 	}
 
 	return context, nil
