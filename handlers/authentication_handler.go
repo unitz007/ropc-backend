@@ -3,46 +3,57 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"ropc-backend/kernel"
 	"ropc-backend/model"
 	"ropc-backend/services"
 	"ropc-backend/utils"
-
-	"github.com/gorilla/mux"
 )
 
-const authenticationSuccessMsg = "Authentication successful"
+const (
+	authenticationSuccessMsg      = "Authentication successful"
+	grantTypeParam                = "grant_type"
+	clientSecretParam             = "client_secret"
+	clientIdParam                 = "client_id"
+	contentTypeHeader             = "Content-Type"
+	contentTypeErrorMessage       = "invalid content-type"
+	clientIdErrorMessage          = "client id is required"
+	clientSecretErrorMessage      = "client secret is required"
+	grantTypeRequiredErrorMessage = "grant type is required"
+	invalidGrantTypeErrorMessage  = "invalid grant type"
+)
 
 type AuthenticationHandler interface {
 	Authenticate(w http.ResponseWriter, r *http.Request)
 }
 
 type authenticationHandler struct {
+	kernel.Context
 	authenticator services.AuthenticatorService
 }
 
-func NewAuthenticationHandler(authenticator services.AuthenticatorService) AuthenticationHandler {
-	return &authenticationHandler{authenticator}
+func NewAuthenticationHandler(authenticator services.AuthenticatorService, ctx kernel.Context) AuthenticationHandler {
+	return &authenticationHandler{ctx, authenticator}
 }
 
 func (a *authenticationHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
 
-	if r.Header.Get("Content-Type") != "application/x-www-form-urlencoded" {
-		panic(errors.New("invalid content-type"))
+	if r.Header.Get(contentTypeHeader) != "application/x-www-form-urlencoded" {
+		panic(errors.New(contentTypeErrorMessage))
 	}
 
-	clientId := r.FormValue("client_id")
-	if clientId == "" {
-		panic(errors.New("client id is required"))
+	clientId := r.FormValue(clientIdParam)
+	if clientId == utils.Blank {
+		panic(errors.New(clientIdErrorMessage))
 	}
 
-	clientSecret := r.FormValue("client_secret")
-	if clientSecret == "" {
-		panic(errors.New("client secret is required"))
+	clientSecret := r.FormValue(clientSecretParam)
+	if clientSecret == utils.Blank {
+		panic(errors.New(clientSecretErrorMessage))
 	}
 
-	grantType := r.FormValue("grant_type")
-	if grantType == "" {
-		panic(errors.New("grant type is required"))
+	grantType := r.FormValue(grantTypeParam)
+	if grantType == utils.Blank {
+		panic(errors.New(grantTypeRequiredErrorMessage))
 	}
 
 	var token string
@@ -52,7 +63,7 @@ func (a *authenticationHandler) Authenticate(w http.ResponseWriter, r *http.Requ
 	case "client_credentials":
 		token, err = a.authenticator.ClientCredentials(clientId, clientSecret)
 	default:
-		panic(errors.New("invalid grant type"))
+		panic(errors.New(invalidGrantTypeErrorMessage))
 	}
 
 	if err != nil {
@@ -68,8 +79,4 @@ func (a *authenticationHandler) Authenticate(w http.ResponseWriter, r *http.Requ
 	}
 
 	_ = utils.PrintResponse[*model.Response[*model.TokenResponse]](http.StatusOK, w, response)
-}
-
-func (a *authenticationHandler) GetMux() *mux.Router {
-	return &mux.Router{}
 }

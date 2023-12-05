@@ -44,7 +44,8 @@ func GetUserFromContext(ctx context.Context) (*model.User, error) {
 func BuildTestRequest(t testing.TB, body io.Reader) (req *httptest.ResponseRecorder, res *http.Request) {
 	t.Helper()
 	request := httptest.NewRequest(http.MethodPut, "http://localhost:0909/apps", body)
-	request = request.WithContext(context.WithValue(request.Context(), UserKey, &model.User{Model: gorm.Model{ID: uint(0)}}))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request = request.WithContext(context.WithValue(request.Context(), UserKey, &model.User{Model: gorm.Model{ID: uint(2)}}))
 	response := httptest.NewRecorder()
 
 	return response, request
