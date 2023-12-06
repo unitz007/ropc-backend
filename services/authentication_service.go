@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	InvalidClientMessage   = "invalid credentials"
-	ConnectionErrorMessage = "could not authenticate client"
+	InvalidClientMessage = "invalid credentials"
 )
 
 type AuthenticatorService interface {
@@ -28,16 +27,16 @@ type authenticatorService struct {
 func (a *authenticatorService) ClientCredentials(clientId, clientSecret string) (string, error) {
 	app, err := a.applicationRepository.GetByClientId(clientId)
 	if err != nil {
-		return "", err
+		return utils.Blank, err
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(app.ClientSecret), []byte(clientSecret)); err != nil || errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-		return "", errors.New(InvalidClientMessage)
+		return utils.Blank, errors.New(InvalidClientMessage)
 	}
 
-	accessToken := model.NewAccessToken(app.ClientId, a.config.TokenExpiry(), "").Sign(a.config.TokenSecret())
+	accessToken := model.NewAccessToken(app.ClientId, a.config.TokenExpiry(), utils.GetIssuerUri(a.config)).Sign(a.config.TokenSecret())
 	if err != nil {
-		return "", err
+		return utils.Blank, err
 	}
 
 	return accessToken, nil
@@ -46,28 +45,3 @@ func (a *authenticatorService) ClientCredentials(clientId, clientSecret string) 
 func NewAuthenticatorService(applicationRepository repositories.ApplicationRepository, config utils.Config) AuthenticatorService {
 	return &authenticatorService{applicationRepository: applicationRepository, config: config}
 }
-
-//
-//func NewAuthenticator(cA authenticators.ClientAuthenticator) Authenticator {
-//	return &authenticator{
-//		//userAuthenticator:   uA,
-//		clientAuthenticator: cA,
-//	}
-//}
-//
-//func (selfC authenticator) Authenticate(client *entities.Application) (*dto.Token, error) {
-//
-//	c, err := selfC.clientAuthenticator.Authenticate(client.ClientId, client.ClientSecret)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	accessToken, err := utils.GenerateToken(c, conf.EnvironmentConfig.TokenSecret())
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	token := &dto.Token{AccessToken: accessToken}
-//
-//	return token, nil
-//}

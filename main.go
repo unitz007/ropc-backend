@@ -62,7 +62,7 @@ func main() {
 		return func(w http.ResponseWriter, r *http.Request) {
 			accessToken := r.Header.Get(tokenHeader)
 
-			if accessToken == "" {
+			if accessToken == utils.Blank {
 				panic(errors.New(tokenHeaderErrorMsg + " for path: " + r.URL.String()))
 			}
 

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"strings"
 
@@ -11,21 +12,6 @@ import (
 const (
 	bearerPrefix = "Bearer "
 )
-
-//func GenerateToken[T model.TokenProperties](t T, tokenSecret string) (string, error) {
-//
-//	accessToken := model.AccessToken{
-//		IssuedAt:  time.Now().Unix(),
-//		ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
-//		Sub:       t.Subject(),
-//		Issuer:    fmt.Sprintf("http://%s:%s", getIp(), NewConfig().ServerPort()),
-//		Name:      client.Name,
-//	}
-//
-//	token := jwt.NewWithClaims(jwt.SigningMethodHS256, accessToken)
-//
-//	return token.SignedString([]byte(tokenSecret))
-//}
 
 func ValidateToken(token, tokenSecret string) (jwt.MapClaims, error) {
 	token = strings.TrimPrefix(token, bearerPrefix)
@@ -57,4 +43,21 @@ func PrintResponse[T any](statusCode int, res http.ResponseWriter, payload T) er
 	}
 
 	return nil
+}
+
+func GetIssuerUri(conf Config) string {
+	var ip string
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, address := range addrs {
+		// check the address type and if it is not a loopback the display it
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				ip = ipnet.IP.String()
+			}
+		}
+	}
+	return "http://" + ip + ":" + conf.ServerPort()
 }

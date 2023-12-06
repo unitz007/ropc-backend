@@ -4,6 +4,7 @@ import (
 	"errors"
 	"ropc-backend/model"
 	"ropc-backend/repositories"
+	"ropc-backend/utils"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -21,15 +22,15 @@ func NewUserService(repository repositories.UserRepository) UserService {
 }
 
 func (selfC userService) CreateUser(user *model.User) (*model.User, error) {
-	if user.Username == "" {
+	if user.Username == utils.Blank {
 		return nil, errors.New("username is required")
 	}
 
-	if user.Password == "" {
+	if user.Password == utils.Blank {
 		return nil, errors.New("password is required")
 	}
 
-	if user.Email == "" {
+	if user.Email == utils.Blank {
 		return nil, errors.New("email is required")
 	}
 

@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"net"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -47,20 +46,4 @@ func (t *AccessToken) Sign(secret string) string {
 func (t *AccessToken) AddClaim(key, value string) *AccessToken {
 	t.claims[key] = value
 	return t
-}
-
-func getIp() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
-	}
-	for _, address := range addrs {
-		// check the address type and if it is not a loopback the display it
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
-	}
-	return ""
 }
