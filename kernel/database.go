@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type Database interface {
@@ -30,12 +31,13 @@ func NewDatabase(config utils.Config) (Database, error) {
 
 	DbUrl := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local", user, password, host, name)
 
-	db, err := gorm.Open(mysql.Open(DbUrl), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(DbUrl), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Error),
+	})
 	if err != nil {
 		return nil, err
 	}
-	//
-	err = db.AutoMigrate(&model.User{}, &model.Application{})
+	err = db.AutoMigrate(&model.User{}, &model.Application{}, model.Test{})
 	if err != nil {
 		return nil, err
 	}

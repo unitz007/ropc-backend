@@ -61,5 +61,12 @@ func NewContext(config utils.Config) (Context, error) {
 		router: router,
 	}
 
+	//fmt.Println("Application context loaded successfully")
+	//fmt.Printf("_______________________________________\n")
+	//fmt.Printf("Logger ==> Zap Logger                 |\n")
+	//fmt.Printf("Router ==> %s\n", context.router.Name())
+	//fmt.Printf("Database ==> %s\n", context.Database()..Name())
+	//fmt.Printf("---------------------------------------\n")
+
 	return context, nil
 }

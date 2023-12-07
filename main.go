@@ -23,9 +23,12 @@ import (
 	"net/http"
 	"ropc-backend/handlers"
 	"ropc-backend/kernel"
+	"ropc-backend/model"
 	"ropc-backend/repositories"
 	"ropc-backend/services"
 	"ropc-backend/utils"
+
+	"gorm.io/gorm"
 )
 
 const (
@@ -46,9 +49,11 @@ func main() {
 	}
 
 	defaultMiddlewares := kernel.NewMiddleware(ctx)
+
 	// Repositories
 	applicationRepository := repositories.NewApplicationRepository(ctx.Database())
 	userRepository := repositories.NewUserRepository(ctx.Database())
+	testRepository := kernel.NewRepository[model.Test](model.Test{}, ctx.Database().GetDatabaseConnection().(*gorm.DB))
 
 	// services
 	authenticatorService := services.NewAuthenticatorService(applicationRepository, config)
@@ -57,6 +62,9 @@ func main() {
 	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService, ctx)
 	applicationHandler := handlers.NewApplicationHandler(applicationRepository, ctx)
 	userHandler := handlers.NewUserHandler(config, userRepository)
+	testHandler := handlers.TestHandler{
+		Repository: testRepository,
+	}
 
 	security := func(h func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -95,6 +103,8 @@ func main() {
 	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
 	server.RegisterHandler(userPath, http.MethodPost, userHandler.CreateUser)
 	server.RegisterHandler(userPath+"/auth", http.MethodPost, userHandler.AuthenticateUser)
+
+	server.RegisterHandler("/test", http.MethodPost, testHandler.Create)
 
 	// swagger
 

@@ -14,6 +14,18 @@ type Application struct {
 	User         User `gorm:"references:ID"`
 }
 
+type User struct {
+	gorm.Model
+	Username string `gorm:"index;unique;not-null"`
+	Password string `gorm:"not-null"`
+	Email    string `gorm:"not-null;unique"`
+}
+
+type Test struct {
+	gorm.Model
+	TestValue string `gorm:""`
+}
+
 func (a *Application) ToDTO() *ApplicationDto {
 	return &ApplicationDto{
 		ClientId:    a.ClientId,

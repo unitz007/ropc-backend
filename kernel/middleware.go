@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"ropc-backend/model"
 	"ropc-backend/utils"
+	"time"
 )
 
 type Middleware interface {
@@ -25,12 +26,14 @@ func (m middleware) PanicHandler(h func(w http.ResponseWriter, r *http.Request))
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				errorMsg := "Something went wrong"
+				code := http.StatusInternalServerError
+				errorMsg := "Something went wrong. Contact support"
 				if e, ok := err.(error); ok {
 					errorMsg = e.Error()
+					code = http.StatusBadRequest
 				}
 				m.Logger().Error(errorMsg)
-				_ = utils.PrintResponse(http.StatusBadRequest, w, model.NewResponse[any](errorMsg, nil))
+				_ = utils.PrintResponse(code, w, model.NewResponse[any](errorMsg, nil))
 			}
 		}()
 
@@ -41,9 +44,11 @@ func (m middleware) PanicHandler(h func(w http.ResponseWriter, r *http.Request))
 func (m middleware) RequestLogging(h func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		s := fmt.Sprintf("%v request to %v", r.Method, r.URL.Path)
+		startTime := time.Now()
+		h(w, r) // executed
+		endTime := time.Since(startTime).Milliseconds()
+		s := fmt.Sprintf("%v request to %v completed in %dms", r.Method, r.URL.Path, endTime)
 		m.Logger().Info(s)
-		h(w, r)
 
 	}
 
