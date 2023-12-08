@@ -27,7 +27,7 @@ func (m middleware) PanicHandler(h func(w http.ResponseWriter, r *http.Request))
 		defer func() {
 			if err := recover(); err != nil {
 				code := http.StatusInternalServerError
-				errorMsg := "Something went wrong. Contact support"
+				errorMsg := "Internal Server Error"
 				if e, ok := err.(error); ok {
 					errorMsg = e.Error()
 					code = http.StatusBadRequest

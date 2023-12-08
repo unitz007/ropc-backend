@@ -25,7 +25,6 @@ import (
 	"ropc-backend/kernel"
 	"ropc-backend/model"
 	"ropc-backend/repositories"
-	"ropc-backend/services"
 	"ropc-backend/utils"
 
 	"gorm.io/gorm"
@@ -51,15 +50,15 @@ func main() {
 	defaultMiddlewares := kernel.NewMiddleware(ctx)
 
 	// Repositories
-	applicationRepository := repositories.NewApplicationRepository(ctx.Database())
+	applicationRepository := kernel.NewRepository[model.Application](model.Application{}, ctx.Database().GetDatabaseConnection().(*gorm.DB))
 	userRepository := repositories.NewUserRepository(ctx.Database())
 	testRepository := kernel.NewRepository[model.Test](model.Test{}, ctx.Database().GetDatabaseConnection().(*gorm.DB))
 
 	// services
-	authenticatorService := services.NewAuthenticatorService(applicationRepository, config)
+	//authenticatorService := services.NewAuthenticatorService(applicationRepository, config)
 
 	// Handlers
-	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService, ctx)
+	//authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService, ctx)
 	applicationHandler := handlers.NewApplicationHandler(applicationRepository, ctx)
 	userHandler := handlers.NewUserHandler(config, userRepository)
 	testHandler := handlers.TestHandler{
@@ -94,13 +93,13 @@ func main() {
 
 	// Server
 	server := kernel.NewServer(ctx, defaultMiddlewares)
-	server.RegisterHandler(appPath, http.MethodPost, security(applicationHandler.CreateApplication))
-	server.RegisterHandler(appPath, http.MethodGet, security(applicationHandler.GetApplications))
-	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security(applicationHandler.GetApplication))
+	//server.RegisterHandler(appPath, http.MethodPost, security(applicationHandler.CreateApplication))
+	//server.RegisterHandler(appPath, http.MethodGet, security(applicationHandler.GetApplications))
+	//server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security(applicationHandler.GetApplication))
 	server.RegisterHandler(appPath+"/{client_id}", http.MethodDelete, security(applicationHandler.DeleteApplication))
 
-	server.RegisterHandler(generateSecretPath, http.MethodPut, security(applicationHandler.GenerateSecret))
-	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
+	//server.RegisterHandler(generateSecretPath, http.MethodPut, security(applicationHandler.GenerateSecret))
+	//server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
 	server.RegisterHandler(userPath, http.MethodPost, userHandler.CreateUser)
 	server.RegisterHandler(userPath+"/auth", http.MethodPost, userHandler.AuthenticateUser)
 
