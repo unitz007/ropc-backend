@@ -19,12 +19,13 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"ropc-backend/handlers"
 	"ropc-backend/kernel"
 	"ropc-backend/model"
-	"ropc-backend/repositories"
+	"ropc-backend/services"
 	"ropc-backend/utils"
 
 	"gorm.io/gorm"
@@ -49,21 +50,22 @@ func main() {
 
 	defaultMiddlewares := kernel.NewMiddleware(ctx)
 
+	db, ok := ctx.Database().GetDatabaseConnection().(*gorm.DB)
+	if !ok {
+		log.Fatal("Database connection failed. could not get Database connection object")
+	}
+
 	// Repositories
-	applicationRepository := kernel.NewRepository[model.Application](model.Application{}, ctx.Database().GetDatabaseConnection().(*gorm.DB))
-	userRepository := repositories.NewUserRepository(ctx.Database())
-	testRepository := kernel.NewRepository[model.Test](model.Test{}, ctx.Database().GetDatabaseConnection().(*gorm.DB))
+	applicationRepository := kernel.NewRepository[model.Application](model.Application{}, db)
+	userRepository := kernel.NewRepository[model.User](model.User{}, db)
 
 	// services
-	//authenticatorService := services.NewAuthenticatorService(applicationRepository, config)
+	authenticatorService := services.NewAuthenticatorService(applicationRepository, config)
 
 	// Handlers
-	//authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService, ctx)
+	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService, ctx)
 	applicationHandler := handlers.NewApplicationHandler(applicationRepository, ctx)
-	userHandler := handlers.NewUserHandler(config, userRepository)
-	testHandler := handlers.TestHandler{
-		Repository: testRepository,
-	}
+	//userHandler := handlers.NewUserHandler(config, userRepository)
 
 	security := func(h func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -80,8 +82,10 @@ func main() {
 			}
 
 			email := token["sub"].(string)
-			user, err := userRepository.GetUser(email)
+			conditions := utils.Queries[utils.WhereUsernameOrEmailIs](email)
+			user, err := userRepository.Get(conditions)
 			if err != nil {
+				fmt.Println(err)
 				http.Error(w, "", http.StatusForbidden)
 			}
 
@@ -93,17 +97,13 @@ func main() {
 
 	// Server
 	server := kernel.NewServer(ctx, defaultMiddlewares)
-	//server.RegisterHandler(appPath, http.MethodPost, security(applicationHandler.CreateApplication))
-	//server.RegisterHandler(appPath, http.MethodGet, security(applicationHandler.GetApplications))
-	//server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security(applicationHandler.GetApplication))
+	server.RegisterHandler(appPath, http.MethodPost, security(applicationHandler.CreateApplication))
+	server.RegisterHandler(appPath, http.MethodGet, security(applicationHandler.GetApplications))
+	server.RegisterHandler(appPath+"/{client_id}", http.MethodGet, security(applicationHandler.GetApplication))
 	server.RegisterHandler(appPath+"/{client_id}", http.MethodDelete, security(applicationHandler.DeleteApplication))
 
-	//server.RegisterHandler(generateSecretPath, http.MethodPut, security(applicationHandler.GenerateSecret))
-	//server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
-	server.RegisterHandler(userPath, http.MethodPost, userHandler.CreateUser)
-	server.RegisterHandler(userPath+"/auth", http.MethodPost, userHandler.AuthenticateUser)
-
-	server.RegisterHandler("/test", http.MethodPost, testHandler.Create)
+	server.RegisterHandler(generateSecretPath, http.MethodPut, security(applicationHandler.GenerateSecret))
+	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
 
 	// swagger
 

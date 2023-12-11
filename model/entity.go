@@ -26,7 +26,7 @@ type Test struct {
 	TestValue string `gorm:""`
 }
 
-func (a *Application) ToDTO() *ApplicationDto {
+func (a Application) ToDTO() *ApplicationDto {
 	return &ApplicationDto{
 		ClientId:    a.ClientId,
 		Name:        a.Name,

@@ -38,10 +38,13 @@ func (z ZapLogger) Fatal(v string) {
 }
 
 func NewZapLogger(config Config) *ZapLogger {
-	env := config.Environment()
+	env := config.AppMode()
 	var logger *zap.Logger
-	if env == "development" {
+	if env == "development" || env == "debug" {
 		c := zap.NewDevelopmentConfig()
+		if env == "development" {
+			c.DisableStacktrace = true
+		}
 		c.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 		logger, _ := c.Build()
 		return &ZapLogger{zap: logger}
