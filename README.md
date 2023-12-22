@@ -1,4 +1,5 @@
-[![CI](https://github.com/unitz007/ropc-backend/actions/workflows/main.yml/badge.svg)](https://github.com/unitz007/ropc-backend/actions/workflows/main.yml)# ROPC SERVICE (BACKEND) 
+[![CI](https://github.com/unitz007/ropc-backend/actions/workflows/main.yml/badge.svg)](https://github.com/unitz007/ropc-backend/actions/workflows/main.yml)
+# ROPC SERVICE (BACKEND) 
 
 This is an implementation of Resource Owner Password Credentials.
 
