@@ -3,7 +3,6 @@ package kernel
 import (
 	"fmt"
 	"net/http"
-	"ropc-backend/model"
 	"ropc-backend/utils"
 	"time"
 )
@@ -28,12 +27,19 @@ func (m middleware) PanicHandler(h func(w http.ResponseWriter, r *http.Request))
 			if err := recover(); err != nil {
 				code := http.StatusInternalServerError
 				errorMsg := "Internal Server Error"
-				if e, ok := err.(error); ok {
+				if e, ok := err.(Error); ok {
 					errorMsg = e.Error()
-					code = http.StatusBadRequest
+					code = e.Code()
+				} else {
+					if e, ok := err.(error); ok {
+						code = http.StatusBadRequest
+						errorMsg = e.Error()
+					}
 				}
+
 				m.Logger().Error(errorMsg)
-				_ = utils.PrintResponse(code, w, model.NewResponse[any](errorMsg, nil))
+
+				_ = utils.PrintResponseNew[any](w, code, errorMsg, nil)
 			}
 		}()
 

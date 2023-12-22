@@ -1,8 +1,8 @@
 package model
 
 type Response[T any] struct {
-	Message string `json:"message,omitempty"`
-	Payload T      `json:"payload,omitempty"`
+	Message string `json:"msg,omitempty"`
+	Payload T      `json:"data,omitempty"`
 }
 
 type ApplicationResponse struct {

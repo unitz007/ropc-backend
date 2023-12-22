@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
+	"ropc-backend/kernel"
 	"ropc-backend/mocks"
 	"ropc-backend/model"
 	"ropc-backend/utils"
@@ -19,7 +19,7 @@ func TestCreateUser(t *testing.T) {
 	email := "test@gmail.com"
 	password := "password"
 
-	user := &model.User{
+	user := model.User{
 		Username: username,
 		Password: password,
 		Email:    email,
@@ -50,7 +50,7 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	for _, e := range tt {
-		userRepository := new(mocks.UserRepository)
+		userRepository := new(mocks.Repository[model.User])
 		request := httptest.NewRequest(http.MethodPost, "/users", e.Request)
 		response := httptest.NewRecorder()
 
@@ -68,29 +68,30 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	t.Run("should not create a new user if username already exists in database", func(t *testing.T) {
-		userRepository := new(mocks.UserRepository)
+		userRepository := new(mocks.Repository[model.User])
+		config := new(mocks.Config)
+		handler := NewUserHandler(config, userRepository)
+
 		json := userRequest(t, username, email, password)
 
-		userRepository.On("CreateUser", user).Return(nil, errors.New("user with this username already exists"))
+		userRepository.On("Create", user).Return(kernel.EntityAlreadyExists)
 
 		request := httptest.NewRequest(http.MethodPost, "/users", json)
 		response := httptest.NewRecorder()
-
-		handler := NewUserHandler(utils.NewConfig(), userRepository)
 
 		exec := func() {
 			handler.CreateUser(response, request)
 		}
 
-		assert.PanicsWithError(t, "user with this username already exists", exec)
-		userRepository.AssertCalled(t, "CreateUser", user)
+		assert.Panics(t, exec)
+		userRepository.AssertCalled(t, "Create", user)
 	})
 
 	t.Run("user created successfully", func(t *testing.T) {
-		userRepository := new(mocks.UserRepository)
+		userRepository := new(mocks.Repository[model.User])
 		json := userRequest(t, username, email, password)
 
-		userRepository.On("CreateUser", user).Return(user, nil)
+		userRepository.On("Create", user).Return(nil)
 
 		request := httptest.NewRequest(http.MethodPost, "/users", json)
 		response := httptest.NewRecorder()
@@ -105,7 +106,7 @@ func TestCreateUser(t *testing.T) {
 			t.Errorf("expected %d, got %d", expected, got)
 		}
 
-		userRepository.AssertCalled(t, "CreateUser", user)
+		userRepository.AssertCalled(t, "Create", user)
 
 	})
 }

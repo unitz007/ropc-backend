@@ -6,6 +6,7 @@ import (
 	"ropc-backend/kernel"
 	"ropc-backend/model"
 	"ropc-backend/utils"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -69,15 +70,15 @@ func (u *userHandler) CreateUser(response http.ResponseWriter, request *http.Req
 		panic(errors.New("invalid request body"))
 	}
 
-	if requestBody.UserName == "" {
+	if requestBody.UserName == utils.Blank {
 		panic(errors.New("username is required"))
 	}
 
-	if requestBody.EmailAddress == "" {
+	if requestBody.EmailAddress == utils.Blank {
 		panic(errors.New("email is required"))
 	}
 
-	if requestBody.Password == "" {
+	if requestBody.Password == utils.Blank {
 		panic(errors.New("password is required"))
 	}
 
@@ -89,8 +90,15 @@ func (u *userHandler) CreateUser(response http.ResponseWriter, request *http.Req
 
 	err = u.userRepository.Create(user)
 	if err != nil {
-		panic(err)
+		message := err.Error()
+		switch {
+		case strings.Contains(err.Error(), "username"):
+			message = "username already exists"
+		case strings.Contains(err.Error(), "email"):
+			message = "email already exists"
+		}
 
+		panic(kernel.NewError(http.StatusConflict, message))
 	}
 
 	res := model.NewResponse[any](userCreated, nil)

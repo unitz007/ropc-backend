@@ -1,6 +1,9 @@
 package kernel
 
 import (
+	"errors"
+	"fmt"
+
 	"gorm.io/gorm"
 )
 
@@ -35,6 +38,11 @@ func (r repository[Model]) Get(conditions string) (*Model, error) {
 		Error
 
 	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			err = EntityNotFoundError
+		}
+
 		return nil, err
 	}
 
@@ -44,6 +52,11 @@ func (r repository[Model]) Get(conditions string) (*Model, error) {
 func (r repository[Model]) Create(model Model) error {
 	err := r.db.Create(&model).Error
 	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrDuplicatedKey):
+			err = EntityAlreadyExists(err.Error())
+		}
+		fmt.Println(err)
 		return err
 	}
 

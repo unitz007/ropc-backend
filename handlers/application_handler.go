@@ -10,7 +10,10 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
+)
+
+var (
+	applicationNotFoundErr = "Application does not exist"
 )
 
 type ApplicationHandler interface {
@@ -33,18 +36,19 @@ func (a *applicationHandler) DeleteApplication(response http.ResponseWriter, req
 		panic(err)
 	}
 
-	user, err := GetUserFromContext(request.Context())
-	if err != nil {
-		_ = utils.PrintResponse[any](http.StatusForbidden, response, nil)
-		return
-	}
+	user := GetUserFromContext(request.Context())
 
 	condition := utils.Queries[utils.WhereClientIdAndUserIdIs](clientId, user.ID)
 
 	app, err := a.repository.Get(condition)
 
 	if err != nil {
-		panic(err)
+		if errors.Is(err, kernel.EntityNotFoundError) {
+			_ = utils.PrintResponseNew[any](response, http.StatusNotFound, applicationNotFoundErr, nil)
+			return
+		} else {
+			panic(err)
+		}
 	}
 
 	condition = utils.Queries[utils.WhereIdIs](app.ID)
@@ -54,9 +58,7 @@ func (a *applicationHandler) DeleteApplication(response http.ResponseWriter, req
 		panic(errors.New("failed to delete application"))
 	}
 
-	body := *model.NewResponse[any]("application deleted successfully", nil)
-
-	_ = utils.PrintResponse[model.Response[any]](http.StatusOK, response, body)
+	_ = utils.PrintResponseNew[any](response, http.StatusOK, "Application deleted successfully", nil)
 }
 
 func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Request) {
@@ -66,46 +68,39 @@ func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	user, _ := GetUserFromContext(r.Context())
+	user := GetUserFromContext(r.Context())
 
 	condition := utils.Queries[utils.WhereClientIdAndUserIdIs](clientId, user.ID)
 
 	app, err := a.repository.Get(condition)
+
 	if err != nil {
-		switch {
-		case errors.Is(err, gorm.ErrRecordNotFound):
-			panic(errors.New("application not found"))
-		default:
+		if errors.Is(err, kernel.EntityNotFoundError) {
+			panic(applicationNotFoundErr)
+		} else {
 			panic(err.Error())
 		}
-
 	}
-	res := model.NewResponse[*model.ApplicationDto]("success", app.ToDTO())
 
-	_ = utils.PrintResponse[*model.Response[*model.ApplicationDto]](http.StatusOK, w, res)
+	_ = utils.PrintResponseNew[*model.ApplicationDto](w, http.StatusOK, "Application fetched successfully", app.ToDTO())
 
 }
 
 func (a *applicationHandler) GetApplications(w http.ResponseWriter, r *http.Request) {
 
-	user, err := GetUserFromContext(r.Context())
-	if err != nil {
-		panic(err)
-	}
+	user := GetUserFromContext(r.Context())
 
 	condition := utils.Queries[utils.WhereUserIdIs](user.ID)
 
 	apps := a.repository.GetAll(condition)
 
-	response := make([]*model.ApplicationDto, 0)
+	appDtos := make([]*model.ApplicationDto, 0)
 	for _, app := range apps {
 		r := app.ToDTO()
-		response = append(response, r)
+		appDtos = append(appDtos, r)
 	}
 
-	responseBody := model.NewResponse[[]*model.ApplicationDto](fmt.Sprintf("%d application(s) fetched successfully", len(apps)), response)
-
-	_ = utils.PrintResponse[*model.Response[[]*model.ApplicationDto]](http.StatusOK, w, responseBody)
+	_ = utils.PrintResponseNew[[]*model.ApplicationDto](w, http.StatusOK, fmt.Sprintf("%d application(s) fetched successfully", len(apps)), appDtos)
 }
 
 func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +111,7 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 		panic(errors.New("invalid request body"))
 	}
 
-	user, err := GetUserFromContext(r.Context())
+	user := GetUserFromContext(r.Context())
 	if err != nil {
 		panic(errors.New("forbidden: not allowed to make this request"))
 	}
@@ -150,9 +145,7 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 		RedirectUrl:  app.RedirectUri,
 	}
 
-	response := model.NewResponse[*model.ApplicationResponse]("secret generated successfully", applicationResponse)
-
-	_ = utils.PrintResponse[*model.Response[*model.ApplicationResponse]](http.StatusOK, w, response)
+	_ = utils.PrintResponseNew[*model.ApplicationResponse](w, http.StatusOK, "Secret generated successfully", applicationResponse)
 
 }
 func NewApplicationHandler(applicationRepository kernel.Repository[model.Application], ctx kernel.Context) ApplicationHandler {
@@ -166,7 +159,7 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 
 	var (
 		request *model.CreateApplication
-		user, _ = GetUserFromContext(r.Context())
+		user    = GetUserFromContext(r.Context())
 	)
 
 	err := JsonToStruct(r.Body, &request)
@@ -178,18 +171,33 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 		panic(errors.New("name is required"))
 	}
 
+	if request.ClientId == utils.Blank {
+		panic(errors.New("client_id is required"))
+	}
+
+	clientId, err := uuid.Parse(request.ClientId)
+	if err != nil {
+		panic(errors.New("invalid client_id. client_id should be uuid"))
+	}
+
 	condition := utils.Queries[utils.WhereNameAndUserIdIs](request.Name, user.ID)
 
 	alreadyExists, _ := a.repository.Get(condition)
 	if alreadyExists != nil {
-		panic(errors.New("application with this name already exists"))
+		panic(kernel.NewError(http.StatusConflict, "Oops, you have an application with this name already."))
+	}
+
+	condition = utils.Queries[utils.WhereClientIdAndUserIdIs](request.ClientId, user.ID)
+	alreadyExists, _ = a.repository.Get(condition)
+	if alreadyExists != nil {
+		panic(kernel.NewError(http.StatusConflict, "Oops, you have an application with this client id already."))
 	}
 
 	app := model.Application{
 		Name:        request.Name,
 		RedirectUri: request.RedirectUri,
 		User:        *user,
-		ClientId:    uuid.NewString(),
+		ClientId:    clientId.String(),
 	}
 
 	err = a.repository.Create(app)
@@ -197,7 +205,7 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 		panic(err)
 	}
 
-	response := model.NewResponse[any]("application created successfully", nil)
+	w.Header().Add("Content-Location", "/apps/"+app.ClientId)
 
-	_ = utils.PrintResponse[*model.Response[any]](http.StatusCreated, w, response)
+	_ = utils.PrintResponseNew[any](w, http.StatusCreated, "Application created successfully", nil)
 }

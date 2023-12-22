@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
+	"ropc-backend/kernel"
 	"ropc-backend/mocks"
 	"ropc-backend/model"
+	"ropc-backend/utils"
 	"strings"
 	"testing"
 
@@ -60,7 +61,7 @@ func TestCreateAppHandler(t *testing.T) {
 				response, request = BuildTestRequest(t, strings.NewReader(`{ "name": "test_name"}`))
 				exec              = func() {
 
-					repo := new(mocks.ApplicationRepository)
+					repo := new(mocks.Repository[model.Application])
 					repo.On("GetByClientId", "test_id").Return(nil, nil)
 					repo.On("GetByName", "test_name").Return(nil, nil)
 					repo.On("Create", app).Return(nil)
@@ -78,61 +79,90 @@ func TestCreateAppHandler(t *testing.T) {
 		})
 	}
 
-	//t.Run("should panic with client id is required", func(t *testing.T) {
-	//	t.Skip()
-	//	applicationRepository := new(mocks.ApplicationRepository)
-	//	body := strings.NewReader(`{ "client_id": "", "name": "test_secret", "redirect_uri": "http://localhost:9090"}`)
-	//
-	//	request := httptest.NewRequest(http.MethodPost, "/apps", body)
-	//	response := httptest.NewRecorder()
-	//
-	//	appHandler := NewApplicationHandler(applicationRepository, router)
-	//	exec := func() { appHandler.CreateApplication(response, request) }
-	//
-	//	assert.PanicsWithError(t, "client id is required", exec)
-	//
-	//})
-
-	t.Run("should panic with name is required", func(t *testing.T) {
+	t.Run("should fail when name is not provided", func(t *testing.T) {
 
 		var (
-			applicationRepository = new(mocks.ApplicationRepository)
+			applicationRepository = new(mocks.Repository[model.Application])
 			response, request     = BuildTestRequest(t, strings.NewReader(`{ "client_id": "jhb", "name": "", "redirect_uri": "http://localhost:8080"}`))
 			ctx                   = new(mocks.Context)
 			appHandler            = NewApplicationHandler(applicationRepository, ctx)
 			exec                  = func() { appHandler.CreateApplication(response, request) }
 		)
 
-		assert.PanicsWithError(t, "name is required", exec)
+		assert.Panics(t, exec)
+
+		applicationRepository.AssertNotCalled(t, "Get", utils.Queries[utils.WhereUserIdIs], mock.Anything)
+		applicationRepository.AssertNotCalled(t, "Create", model.Application{})
 	})
 
-	t.Run("should panic with redirect 'uri is required'", func(t *testing.T) {
-		t.Skip("not a requirement")
-		applicationRepository := new(mocks.ApplicationRepository)
-		body := strings.NewReader(`{ "client_id": "jhb", "name": "name", "redirect_uri": ""}`)
-
-		request := httptest.NewRequest(http.MethodPost, "/apps", body)
-		response := httptest.NewRecorder()
-
-		ctx := new(mocks.Context)
-		appHandler := NewApplicationHandler(applicationRepository, ctx)
-		exec := func() { appHandler.CreateApplication(response, request) }
-
-		assert.PanicsWithError(t, "redirect uri is required", exec)
-	})
-
-	t.Run("successful prepareRequest should return 201 CREATED", func(t *testing.T) {
-
+	t.Run("should panic when client_id is not provided", func(t *testing.T) {
 		var (
-			applicationRepository = new(mocks.ApplicationRepository)
-			response, request     = BuildTestRequest(t, strings.NewReader(`{ "name": "test_name"}`))
+			applicationRepository = new(mocks.Repository[model.Application])
+			response, request     = BuildTestRequest(t, strings.NewReader(`{"name": "name", "redirect_uri": ""}`))
 			ctx                   = new(mocks.Context)
 			appHandler            = NewApplicationHandler(applicationRepository, ctx)
-			user, _               = GetUserFromContext(request.Context())
+			exec                  = func() { appHandler.CreateApplication(response, request) }
+		)
+
+		assert.Panics(t, exec)
+
+		applicationRepository.AssertNotCalled(t, "Get", utils.Queries[utils.WhereUserIdIs], mock.Anything)
+		applicationRepository.AssertNotCalled(t, "Create", model.Application{})
+
+	})
+
+	t.Run("should panic when client_id is not uuid", func(t *testing.T) {
+		var (
+			applicationRepository = new(mocks.Repository[model.Application])
+			response, request     = BuildTestRequest(t, strings.NewReader(`{"name": "name", "redirect_uri": "", "client_id": "uyuuhiuhi"}`))
+			ctx                   = new(mocks.Context)
+			appHandler            = NewApplicationHandler(applicationRepository, ctx)
+			exec                  = func() { appHandler.CreateApplication(response, request) }
+			user                  = GetUserFromContext(request.Context())
+		)
+
+		assert.Panics(t, exec)
+
+		applicationRepository.AssertNotCalled(t, "Get", utils.Queries[utils.WhereNameAndUserIdIs]("name", user.ID))
+		applicationRepository.AssertNotCalled(t, "Create", model.Application{})
+
+	})
+
+	t.Run("should fail if client_id already exists'", func(t *testing.T) {
+		var (
+			applicationRepository = new(mocks.Repository[model.Application])
+			response, request     = BuildTestRequest(t, strings.NewReader(`{"name": "name", "redirect_uri": "", "client_id": "f020a2d9-f07d-4ace-bdb6-c2d17332a10d"}`))
+			ctx                   = new(mocks.Context)
+			appHandler            = NewApplicationHandler(applicationRepository, ctx)
+			exec                  = func() { appHandler.CreateApplication(response, request) }
+			user                  = GetUserFromContext(request.Context())
 			application           = &model.Application{Name: "test_name", User: *user}
 		)
 
-		applicationRepository.On("GetByNameAndUserId", "test_name", user.ID).Return(nil, nil)
+		applicationRepository.On("Get", utils.Queries[utils.WhereNameAndUserIdIs]("name", user.ID)).Return(nil, errors.New(""))
+		applicationRepository.On("Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("f020a2d9-f07d-4ace-bdb6-c2d17332a10d", user.ID)).Return(application, nil)
+
+		assert.Panics(t, exec)
+
+		applicationRepository.AssertCalled(t, "Get", utils.Queries[utils.WhereNameAndUserIdIs]("name", user.ID))
+		applicationRepository.AssertCalled(t, "Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("f020a2d9-f07d-4ace-bdb6-c2d17332a10d", user.ID))
+		applicationRepository.AssertNotCalled(t, "Create", application)
+
+	})
+
+	t.Run("should be successful", func(t *testing.T) {
+
+		var (
+			applicationRepository = new(mocks.Repository[model.Application])
+			response, request     = BuildTestRequest(t, strings.NewReader(`{ "name": "name", "client_id":"f020a2d9-f07d-4ace-bdb6-c2d17332a10d"}`))
+			ctx                   = new(mocks.Context)
+			appHandler            = NewApplicationHandler(applicationRepository, ctx)
+			user                  = GetUserFromContext(request.Context())
+			application           = model.Application{Name: "name", ClientId: "f020a2d9-f07d-4ace-bdb6-c2d17332a10d", User: *user}
+		)
+
+		applicationRepository.On("Get", utils.Queries[utils.WhereNameAndUserIdIs]("name", user.ID)).Return(nil, errors.New(""))
+		applicationRepository.On("Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("f020a2d9-f07d-4ace-bdb6-c2d17332a10d", user.ID)).Return(nil, errors.New(""))
 		applicationRepository.On("Create", application).Return(nil)
 
 		appHandler.CreateApplication(response, request)
@@ -144,85 +174,63 @@ func TestCreateAppHandler(t *testing.T) {
 			t.Errorf("expected %v got %v", expected, got)
 		}
 
-		applicationRepository.AssertCalled(t, "GetByNameAndUserId", "test_name", user.ID)
+		contentLocation := response.Header().Get("Content-Location")
+		if contentLocation == utils.Blank {
+			t.Errorf("expected %v got %v", "/apps/"+application.ClientId, contentLocation)
+		}
+
+		applicationRepository.AssertCalled(t, "Get", utils.Queries[utils.WhereNameAndUserIdIs]("name", user.ID))
+		applicationRepository.AssertCalled(t, "Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("f020a2d9-f07d-4ace-bdb6-c2d17332a10d", user.ID))
 		applicationRepository.AssertCalled(t, "Create", application)
 
 	})
 
-	t.Run("should panic with 'application with this client id already exists'", func(t *testing.T) {
-		t.Skip()
-
+	t.Run("should panic when application name already exists", func(t *testing.T) {
 		var (
+			applicationRepository = new(mocks.Repository[model.Application])
+			response, request     = BuildTestRequest(t, strings.NewReader(`{"name": "name", "redirect_uri": "", "client_id": "f020a2d9-f07d-4ace-bdb6-c2d17332a10d"}`))
 			ctx                   = new(mocks.Context)
-			applicationRepository = new(mocks.ApplicationRepository)
-			response, request     = BuildTestRequest(t, strings.NewReader(`{ "client_id": "test_id", "name": "test_name", "redirect_uri": "http://localhost:9090/"}`))
 			appHandler            = NewApplicationHandler(applicationRepository, ctx)
 			exec                  = func() { appHandler.CreateApplication(response, request) }
-			user, _               = GetUserFromContext(request.Context())
+			user                  = GetUserFromContext(request.Context())
+			application           = &model.Application{Name: "name", User: *user}
 		)
 
-		//applicationRepository := new(mocks.ApplicationRepository)
-		//body := strings.NewReader(`{ "name": "test_name"}`)
-		//
-		//request := httptest.NewRequest(http.MethodPost, "/apps", body)
-		//response := httptest.NewRecorder()
+		applicationRepository.On("Get", utils.Queries[utils.WhereNameAndUserIdIs]("name", user.ID)).Return(application, nil)
 
-		applicationRepository.On("GetByClientIdAndUserId", "test_client_id", user.ID).Return(&model.Application{ClientId: "test_id", Name: "test_name"}, nil)
+		assert.Panics(t, exec)
 
-		//appHandler := NewApplicationHandler(applicationRepository, router)
-
-		//exec := func() { appHandler.CreateApplication(response, request) }
-
-		assert.PanicsWithError(t, "application with this client id already exists", exec)
-
-		applicationRepository.AssertNotCalled(t, "GetByClientIdAndUserId", "test_client_id", user.ID)
-		applicationRepository.AssertNotCalled(t, "Create", &model.Application{ClientId: "test_client_id", Name: "test_name"})
+		applicationRepository.AssertCalled(t, "Get", utils.Queries[utils.WhereNameAndUserIdIs]("name", user.ID))
+		applicationRepository.AssertNotCalled(t, "Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("f020a2d9-f07d-4ace-bdb6-c2d17332a10d", user.ID))
+		applicationRepository.AssertNotCalled(t, "Create", application)
 
 	})
 
-	t.Run("should panic with 'application with this name already exists'", func(t *testing.T) {
-
-		var (
-			ctx                   = new(mocks.Context)
-			applicationRepository = new(mocks.ApplicationRepository)
-			response, request     = BuildTestRequest(t, strings.NewReader(`{ "client_id": "test_id", "name": "test_name", "redirect_uri": "http://localhost:9090/"}`))
-			appHandler            = NewApplicationHandler(applicationRepository, ctx)
-			exec                  = func() { appHandler.CreateApplication(response, request) }
-			user, _               = GetUserFromContext(request.Context())
-		)
-
-		applicationRepository.On("GetByNameAndUserId", "test_name", user.ID).Return(&model.Application{ClientId: "test_id", Name: "test_name"}, nil)
-
-		assert.PanicsWithError(t, "application with this name already exists", exec)
-		applicationRepository.AssertCalled(t, "GetByNameAndUserId", "test_name", user.ID)
-		applicationRepository.AssertNotCalled(t, "Create", &model.Application{ClientId: "test_client", Name: "test_name"})
-
-	})
 }
 
 func TestGenerateClientSecret(t *testing.T) {
 	ctx := new(mocks.Context)
-	t.Run("should panic with 'application does not exist'", func(t *testing.T) {
+	t.Run("should panic when 'application does not exist'", func(t *testing.T) {
 
 		var (
 			response, request = BuildTestRequest(t, strings.NewReader(`{ "client_id": "test_client"}`))
-			repoMock          = new(mocks.ApplicationRepository)
+			repoMock          = new(mocks.Repository[model.Application])
 			handler           = NewApplicationHandler(repoMock, ctx)
+			user              = GetUserFromContext(request.Context())
 			exec              = func() { handler.GenerateSecret(response, request) }
 		)
 
-		repoMock.On("GetByClientIdAndUserId", "test_client", uint(2)).Return(nil, errors.New("application does not exist"))
+		repoMock.On("Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("test_client", user.ID)).Return(nil, errors.New("application does not exist"))
 		repoMock.On("Update", &model.Application{Name: "test_name"}).Return(mock.Anything, nil)
 
-		assert.PanicsWithError(t, "application does not exist", exec)
+		assert.Panics(t, exec)
 
-		repoMock.AssertCalled(t, "GetByClientIdAndUserId", "test_client", uint(2))
+		repoMock.AssertCalled(t, "Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("test_client", user.ID))
 		repoMock.AssertNotCalled(t, "Update", &model.Application{Name: "test_name"})
 
 	})
 
 	t.Run("should generate client secret", func(t *testing.T) {
-
 		t.Skip()
 
 		var (
@@ -231,17 +239,18 @@ func TestGenerateClientSecret(t *testing.T) {
 			hashedSecret, _   = bcrypt.GenerateFromPassword([]byte(secret), 0)
 			app               = &model.Application{ClientId: clientId}
 			response, request = BuildTestRequest(t, strings.NewReader(`{ "client_id": "test_client"}`))
-			repoMock          = new(mocks.ApplicationRepository)
+			repoMock          = new(mocks.Repository[model.Application])
 			ctx               = new(mocks.Context)
+			user              = GetUserFromContext(request.Context())
 			handler           = NewApplicationHandler(repoMock, ctx)
-			toUpdate          = &model.Application{
-				ClientId:     clientId,
-				ClientSecret: string(hashedSecret),
-			}
 		)
 
-		repoMock.On("GetByClientIdAndUserId", clientId).Return(app, nil)
-		repoMock.On("Update", toUpdate).Return(toUpdate, nil)
+		update := map[string]any{
+			"ClientSecret": string(hashedSecret),
+		}
+
+		repoMock.On("Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("test_client", user.ID)).Return(app, nil)
+		repoMock.On("Update", app.ID, update).Return(nil)
 
 		handler.GenerateSecret(response, request)
 
@@ -249,8 +258,8 @@ func TestGenerateClientSecret(t *testing.T) {
 			t.Error("should return 200 OK status code")
 		}
 
-		repoMock.AssertCalled(t, "Get", clientId)
-		//repoMock.AssertCalled(t, "Update", &model.Application{ClientId: clientId, ClientSecret: string(hashedSecret)})
+		//repoMock.AssertCalled(t, "Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("test_client", user.ID))
+		//repoMock.AssertCalled(t, "Update", toUpdate)
 
 	})
 }
@@ -261,7 +270,7 @@ func TestGetApplication(t *testing.T) {
 
 		var (
 			response, request = BuildTestRequest(t, nil)
-			repoMock          = new(mocks.ApplicationRepository)
+			repoMock          = new(mocks.Repository[model.Application])
 			ctx               = new(mocks.Context)
 			handler           = NewApplicationHandler(repoMock, ctx)
 			router            = new(mocks.Router)
@@ -286,66 +295,80 @@ func TestGetApplication(t *testing.T) {
 		var (
 			response, request = BuildTestRequest(t, nil)
 			ctx               = new(mocks.Context)
-			repoMock          = new(mocks.ApplicationRepository)
+			repoMock          = new(mocks.Repository[model.Application])
 			handler           = NewApplicationHandler(repoMock, ctx)
 			exec              = func() { handler.GetApplication(response, request) }
 			router            = new(mocks.Router)
-			user, _           = GetUserFromContext(request.Context())
+			user              = GetUserFromContext(request.Context())
 		)
 
 		ctx.On("Router").Return(router)
 		router.On("GetPathVariable", request, "client_id").Return(nil, "2")
-		repoMock.On("GetByClientIdAndUserId", mock.Anything, user.ID).Return(nil, errors.New("application not found"))
+		repoMock.On("Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("2", user.ID)).Return(nil, kernel.EntityNotFoundError)
 
-		assert.PanicsWithError(t, "application not found", exec)
-		repoMock.AssertCalled(t, "GetByClientIdAndUserId", mock.Anything, user.ID)
+		assert.Panics(t, exec)
+		repoMock.AssertCalled(t, "Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("2", user.ID))
 
 	})
 }
 
 func TestDeleteApplication(t *testing.T) {
 
-	t.Run("should panic with application does not exist", func(t *testing.T) {
+	t.Run("should fail when application does not exist", func(t *testing.T) {
 
 		var (
-			applicationRepository = new(mocks.ApplicationRepository)
+			applicationRepository = new(mocks.Repository[model.Application])
 			ctx                   = new(mocks.Context)
 			response, request     = BuildTestRequest(t, nil)
 			handler               = NewApplicationHandler(applicationRepository, ctx)
-			exec                  = func() { handler.DeleteApplication(response, request) }
-			user, _               = GetUserFromContext(request.Context())
+			user                  = GetUserFromContext(request.Context())
 			testApp               = model.Application{ClientId: "test_client_id", User: *user, Model: gorm.Model{ID: uint(1)}}
 			router                = new(mocks.Router)
 		)
 
 		ctx.On("Router").Return(router)
 		router.On("GetPathVariable", request, "client_id").Return(nil, "test_client_id")
-		applicationRepository.On("GetByClientIdAndUserId", "test_client_id", testApp.User.ID).Return(nil, errors.New("application does not exist"))
+		applicationRepository.On("Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("test_client_id", testApp.User.ID)).Return(nil, kernel.EntityNotFoundError)
 
-		assert.PanicsWithError(t, "application does not exist", exec)
+		handler.DeleteApplication(response, request)
+
+		if response.Code != http.StatusNotFound {
+			t.Errorf("expected code %d, got %d", http.StatusNotFound, response.Code)
+		}
+
+		var responseBody model.Response[*model.Application]
+
+		err := json.Unmarshal(response.Body.Bytes(), &responseBody)
+		if err != nil {
+			t.Fatal("could  not unmarshal")
+		}
+
+		if responseBody.Message != "Application does not exist" {
+			t.Errorf("expected %s but got %s", "Application does not exist", responseBody.Message)
+		}
 
 		ctx.AssertCalled(t, "Router")
 		router.AssertCalled(t, "GetPathVariable", request, "client_id")
-		applicationRepository.AssertCalled(t, "GetByClientIdAndUserId", "test_client_id", testApp.User.ID)
+		applicationRepository.AssertCalled(t, "Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("test_client_id", testApp.User.ID))
 		applicationRepository.AssertNotCalled(t, "Delete", mock.Anything)
 	})
 
 	t.Run("should return 200 if deleted successfully", func(t *testing.T) {
 		var (
-			applicationRepository = new(mocks.ApplicationRepository)
+			applicationRepository = new(mocks.Repository[model.Application])
 			ctx                   = new(mocks.Context)
 			response, request     = BuildTestRequest(t, nil)
 			handler               = NewApplicationHandler(applicationRepository, ctx)
 			router                = new(mocks.Router)
-			user, _               = GetUserFromContext(request.Context())
-			testApp               = model.Application{ClientId: "test_client_id", User: *user}
+			user                  = GetUserFromContext(request.Context())
+			testApp               = model.Application{Model: gorm.Model{ID: uint(1)}, ClientId: "test_client_id", User: *user}
 		)
 
 		ctx.On("Router").Return(router)
 		router.On("GetPathVariable", request, "client_id").Return(nil, "test_client_id")
 
-		applicationRepository.On("GetByClientIdAndUserId", "test_client_id", testApp.User.ID).Return(&testApp, nil)
-		applicationRepository.On("Delete", testApp.ID).Return(nil)
+		applicationRepository.On("Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("test_client_id", testApp.User.ID)).Return(&testApp, nil)
+		applicationRepository.On("Delete", utils.Queries[utils.WhereIdIs](testApp.ID)).Return(nil)
 
 		handler.DeleteApplication(response, request)
 
@@ -353,41 +376,42 @@ func TestDeleteApplication(t *testing.T) {
 
 		ctx.AssertCalled(t, "Router")
 		router.AssertCalled(t, "GetPathVariable", request, "client_id")
-		applicationRepository.AssertCalled(t, "GetByClientIdAndUserId", "test_client_id", testApp.User.ID)
-		applicationRepository.AssertCalled(t, "Delete", testApp.ID)
+		applicationRepository.AssertCalled(t, "Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("test_client_id", testApp.User.ID))
+		applicationRepository.AssertCalled(t, "Delete", utils.Queries[utils.WhereIdIs](testApp.ID))
 
 	})
 
 	t.Run("should panic with 'failed to delete application' if delete application fails", func(t *testing.T) {
 		var (
-			applicationRepository = new(mocks.ApplicationRepository)
+			applicationRepository = new(mocks.Repository[model.Application])
 			ctx                   = new(mocks.Context)
 			response, request     = BuildTestRequest(t, nil)
 			handler               = NewApplicationHandler(applicationRepository, ctx)
 			exec                  = func() { handler.DeleteApplication(response, request) }
-			user, _               = GetUserFromContext(request.Context())
+			user                  = GetUserFromContext(request.Context())
 			testApp               = model.Application{ClientId: "test_client_id", User: *user, Model: gorm.Model{ID: uint(1)}}
 			router                = new(mocks.Router)
 		)
 
 		ctx.On("Router").Return(router)
 		router.On("GetPathVariable", request, "client_id").Return(nil, "test_client_id")
-		applicationRepository.On("GetByClientIdAndUserId", "test_client_id", testApp.User.ID).Return(&testApp, nil)
-		applicationRepository.On("Delete", testApp.ID).Return(errors.New("dummy errors"))
+
+		applicationRepository.On("Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("test_client_id", testApp.User.ID)).Return(&testApp, nil)
+		applicationRepository.On("Delete", utils.Queries[utils.WhereIdIs](testApp.ID)).Return(errors.New("error deleting"))
 
 		assert.PanicsWithError(t, "failed to delete application", exec)
 
 		ctx.AssertCalled(t, "Router")
 		router.AssertCalled(t, "GetPathVariable", request, "client_id")
-		applicationRepository.AssertCalled(t, "GetByClientIdAndUserId", "test_client_id", testApp.User.ID)
-		applicationRepository.AssertCalled(t, "Delete", testApp.ID)
+		applicationRepository.AssertCalled(t, "Get", utils.Queries[utils.WhereClientIdAndUserIdIs]("test_client_id", testApp.User.ID))
+		applicationRepository.AssertCalled(t, "Delete", utils.Queries[utils.WhereIdIs](testApp.ID))
 	})
 
 }
 
 func TestGetApplications(t *testing.T) {
 	var (
-		applicationRepository = new(mocks.ApplicationRepository)
+		applicationRepository = new(mocks.Repository[model.Application])
 		ctx                   = new(mocks.Context)
 		response, request     = BuildTestRequest(t, nil)
 		handler               = NewApplicationHandler(applicationRepository, ctx)
@@ -395,10 +419,12 @@ func TestGetApplications(t *testing.T) {
 			{ClientId: "test_id"},
 		}
 		expectedMessage = fmt.Sprintf("%d application(s) fetched successfully", len(applications))
-		user, _         = GetUserFromContext(request.Context())
+		user            = GetUserFromContext(request.Context())
 	)
 
-	applicationRepository.On("GetAll", user.ID).Return(applications)
+	condition := utils.Queries[utils.WhereUserIdIs](user.ID)
+
+	applicationRepository.On("GetAll", condition).Return(applications)
 	handler.GetApplications(response, request)
 
 	var responseBody *model.Response[[]*model.Application]

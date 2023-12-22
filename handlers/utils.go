@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"ropc-backend/kernel"
 	"ropc-backend/model"
 	"testing"
 
@@ -29,16 +30,16 @@ func JsonToStruct[T any](r io.ReadCloser, t T) error {
 	return nil
 }
 
-func GetUserFromContext(ctx context.Context) (*model.User, error) {
+func GetUserFromContext(ctx context.Context) *model.User {
 	val := ctx.Value(UserKey)
 
 	t, ok := val.(*model.User)
 
 	if !ok {
-		return nil, errors.New("could not verify user from context")
+		panic(kernel.NewError(http.StatusForbidden, "could not verify user from context"))
 	}
 
-	return t, nil
+	return t
 }
 
 func BuildTestRequest(t testing.TB, body io.Reader) (req *httptest.ResponseRecorder, res *http.Request) {

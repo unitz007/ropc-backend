@@ -19,7 +19,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"ropc-backend/handlers"
@@ -65,7 +64,7 @@ func main() {
 	// Handlers
 	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService, ctx)
 	applicationHandler := handlers.NewApplicationHandler(applicationRepository, ctx)
-	//userHandler := handlers.NewUserHandler(config, userRepository)
+	userHandler := handlers.NewUserHandler(config, userRepository)
 
 	security := func(h func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +84,6 @@ func main() {
 			conditions := utils.Queries[utils.WhereUsernameOrEmailIs](email)
 			user, err := userRepository.Get(conditions)
 			if err != nil {
-				fmt.Println(err)
 				http.Error(w, "", http.StatusForbidden)
 			}
 
@@ -104,6 +102,8 @@ func main() {
 
 	server.RegisterHandler(generateSecretPath, http.MethodPut, security(applicationHandler.GenerateSecret))
 	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
+
+	server.RegisterHandler(userPath, http.MethodPost, userHandler.CreateUser)
 
 	// swagger
 
