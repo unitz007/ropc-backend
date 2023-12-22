@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"ropc-backend/kernel"
 	"ropc-backend/model"
+	"ropc-backend/utils"
 	"testing"
 
 	"gorm.io/gorm"
@@ -17,7 +18,6 @@ import (
 
 const (
 	jsonDecodeError = "Couldn't decode JSON: "
-	UserKey         = "user"
 )
 
 func JsonToStruct[T any](r io.ReadCloser, t T) error {
@@ -31,7 +31,7 @@ func JsonToStruct[T any](r io.ReadCloser, t T) error {
 }
 
 func GetUserFromContext(ctx context.Context) *model.User {
-	val := ctx.Value(UserKey)
+	val := ctx.Value(utils.UserKey)
 
 	t, ok := val.(*model.User)
 
@@ -46,7 +46,7 @@ func BuildTestRequest(t testing.TB, body io.Reader) (req *httptest.ResponseRecor
 	t.Helper()
 	request := httptest.NewRequest(http.MethodPut, "http://localhost:0909/apps", body)
 	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	request = request.WithContext(context.WithValue(request.Context(), UserKey, &model.User{Model: gorm.Model{ID: uint(2)}}))
+	request = request.WithContext(context.WithValue(request.Context(), utils.UserKey, &model.User{Model: gorm.Model{ID: uint(2)}}))
 	response := httptest.NewRecorder()
 
 	return response, request
