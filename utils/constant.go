@@ -3,7 +3,9 @@ package utils
 import "fmt"
 
 const (
-	Blank                    = ""
+	Blank   = ""
+	UserKey = "user"
+
 	WhereClientIdAndUserIdIs = "whereClientIdAndUserIdIs"
 	WhereNameAndUserIdIs     = "whereNameAndUserIdIs"
 	WhereUserIdIs            = "whereUserIdIs"

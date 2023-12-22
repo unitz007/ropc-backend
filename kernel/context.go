@@ -9,6 +9,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+	tokenHeader         = "Authorization"
+	tokenHeaderErrorMsg = "bearer token is required"
+)
+
 type Context interface {
 	Database() Database
 	Router() Router

@@ -8,7 +8,7 @@ import (
 
 type Server interface {
 	Start(address string) error
-	RegisterHandler(path, method string, handler func(w http.ResponseWriter, r *http.Request))
+	RegisterHandler(path, method string, handler func(w http.ResponseWriter, r *http.Request), isSecured bool)
 	//AttachMiddleware(middleware func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request)) Server
 }
 
@@ -21,14 +21,16 @@ type server struct {
 	Context
 	handlers    []api
 	middlewares Middleware
+	security    *Security
 }
 
-func NewServer(ctx Context, defaultMiddlewares Middleware) Server {
+func NewServer(ctx Context, defaultMiddlewares Middleware, security *Security) Server {
 
 	return &server{
 		Context:     ctx,
 		handlers:    make([]api, 0),
 		middlewares: defaultMiddlewares,
+		security:    security,
 	}
 }
 
@@ -63,9 +65,13 @@ func (s *server) Start(addr string) error {
 
 }
 
-func (s *server) RegisterHandler(path, method string, handler func(w http.ResponseWriter, r *http.Request)) {
+func (s *server) RegisterHandler(path, method string, handler func(w http.ResponseWriter, r *http.Request), secure bool) {
 
 	fHandler := s.middlewares.RequestLogging(s.middlewares.PanicHandler(handler))
+	if secure == true {
+		s.Logger().Info(fmt.Sprintf("%s %s registered as secured", path, method))
+		fHandler = s.security.Jwt(fHandler)
+	}
 
 	switch method {
 	case http.MethodGet:
