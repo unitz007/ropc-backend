@@ -3,9 +3,10 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"ropc-backend/kernel"
 	"ropc-backend/model"
-	"ropc-backend/repositories"
 	"ropc-backend/utils"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -22,7 +23,7 @@ type UserHandler interface {
 
 type userHandler struct {
 	config         utils.Config
-	userRepository repositories.UserRepository
+	userRepository kernel.Repository[model.User]
 }
 
 func (u *userHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +34,9 @@ func (u *userHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
 		panic(errors.New("invalid request body"))
 	}
 
-	user, err := u.userRepository.GetUser(loginRequest.UsernameOrEmail)
+	condition := utils.Queries[utils.WhereUsernameOrEmailIs](loginRequest.UsernameOrEmail)
+
+	user, err := u.userRepository.Get(condition)
 	if err != nil {
 		_ = utils.PrintResponse[any](http.StatusUnauthorized, w, nil)
 		return
@@ -51,7 +54,7 @@ func (u *userHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
 	_ = utils.PrintResponse[*model.Response[*model.TokenResponse]](http.StatusOK, w, resp)
 }
 
-func NewUserHandler(config utils.Config, userRepository repositories.UserRepository) UserHandler {
+func NewUserHandler(config utils.Config, userRepository kernel.Repository[model.User]) UserHandler {
 	return &userHandler{
 		config:         config,
 		userRepository: userRepository,
@@ -67,28 +70,35 @@ func (u *userHandler) CreateUser(response http.ResponseWriter, request *http.Req
 		panic(errors.New("invalid request body"))
 	}
 
-	if requestBody.UserName == "" {
+	if requestBody.UserName == utils.Blank {
 		panic(errors.New("username is required"))
 	}
 
-	if requestBody.EmailAddress == "" {
+	if requestBody.EmailAddress == utils.Blank {
 		panic(errors.New("email is required"))
 	}
 
-	if requestBody.Password == "" {
+	if requestBody.Password == utils.Blank {
 		panic(errors.New("password is required"))
 	}
 
-	user := &model.User{
+	user := model.User{
 		Username: requestBody.UserName,
 		Password: requestBody.Password,
 		Email:    requestBody.EmailAddress,
 	}
 
-	_, err = u.userRepository.CreateUser(user)
+	err = u.userRepository.Create(user)
 	if err != nil {
-		panic(err)
+		message := err.Error()
+		switch {
+		case strings.Contains(err.Error(), "username"):
+			message = "username already exists"
+		case strings.Contains(err.Error(), "email"):
+			message = "email already exists"
+		}
 
+		panic(kernel.NewError(http.StatusConflict, message))
 	}
 
 	res := model.NewResponse[any](userCreated, nil)

@@ -6,11 +6,14 @@ import (
 	"net/http"
 	"ropc-backend/kernel"
 	"ropc-backend/model"
-	"ropc-backend/repositories"
 	"ropc-backend/utils"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	applicationNotFoundErr = "Application does not exist"
 )
 
 type ApplicationHandler interface {
@@ -23,7 +26,7 @@ type ApplicationHandler interface {
 
 type applicationHandler struct {
 	kernel.Context
-	applicationRepository repositories.ApplicationRepository
+	repository kernel.Repository[model.Application]
 }
 
 func (a *applicationHandler) DeleteApplication(response http.ResponseWriter, request *http.Request) {
@@ -33,25 +36,29 @@ func (a *applicationHandler) DeleteApplication(response http.ResponseWriter, req
 		panic(err)
 	}
 
-	user, err := GetUserFromContext(request.Context())
+	user := GetUserFromContext(request.Context())
+
+	condition := utils.Queries[utils.WhereClientIdAndUserIdIs](clientId, user.ID)
+
+	app, err := a.repository.Get(condition)
+
 	if err != nil {
-		panic(errors.New("application does not exist"))
+		if errors.Is(err, kernel.EntityNotFoundError) {
+			_ = utils.PrintResponseNew[any](response, http.StatusNotFound, applicationNotFoundErr, nil)
+			return
+		} else {
+			panic(err)
+		}
 	}
 
-	app, err := a.applicationRepository.GetByClientIdAndUserId(clientId, user.ID)
+	condition = utils.Queries[utils.WhereIdIs](app.ID)
 
-	if err != nil {
-		panic(errors.New("application does not exist"))
-	}
-
-	err = a.applicationRepository.Delete(app.ID)
+	err = a.repository.Delete(condition)
 	if err != nil {
 		panic(errors.New("failed to delete application"))
 	}
 
-	body := *model.NewResponse[any]("application deleted successfully", nil)
-
-	_ = utils.PrintResponse[model.Response[any]](http.StatusOK, response, body)
+	_ = utils.PrintResponseNew[any](response, http.StatusOK, "Application deleted successfully", nil)
 }
 
 func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Request) {
@@ -61,37 +68,39 @@ func (a *applicationHandler) GetApplication(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	user, _ := GetUserFromContext(r.Context())
+	user := GetUserFromContext(r.Context())
 
-	app, err := a.applicationRepository.GetByClientIdAndUserId(clientId, user.ID)
+	condition := utils.Queries[utils.WhereClientIdAndUserIdIs](clientId, user.ID)
+
+	app, err := a.repository.Get(condition)
+
 	if err != nil {
-		panic(errors.New("application not found"))
+		if errors.Is(err, kernel.EntityNotFoundError) {
+			panic(applicationNotFoundErr)
+		} else {
+			panic(err.Error())
+		}
 	}
-	res := model.NewResponse[*model.ApplicationDto]("success", app.ToDTO())
 
-	_ = utils.PrintResponse[*model.Response[*model.ApplicationDto]](http.StatusOK, w, res)
+	_ = utils.PrintResponseNew[*model.ApplicationDto](w, http.StatusOK, "Application fetched successfully", app.ToDTO())
 
 }
 
 func (a *applicationHandler) GetApplications(w http.ResponseWriter, r *http.Request) {
 
-	user, err := GetUserFromContext(r.Context())
-	if err != nil {
-		panic(err)
-	}
+	user := GetUserFromContext(r.Context())
 
-	apps := a.applicationRepository.GetAll(user.ID)
+	condition := utils.Queries[utils.WhereUserIdIs](user.ID)
 
-	response := make([]*model.ApplicationDto, 0)
+	apps := a.repository.GetAll(condition)
+
+	appDtos := make([]*model.ApplicationDto, 0)
 	for _, app := range apps {
 		r := app.ToDTO()
-
-		response = append(response, r)
+		appDtos = append(appDtos, r)
 	}
 
-	responseBody := model.NewResponse[[]*model.ApplicationDto](fmt.Sprintf("%d application(s) fetched successfully", len(apps)), response)
-
-	_ = utils.PrintResponse[*model.Response[[]*model.ApplicationDto]](http.StatusOK, w, responseBody)
+	_ = utils.PrintResponseNew[[]*model.ApplicationDto](w, http.StatusOK, fmt.Sprintf("%d application(s) fetched successfully", len(apps)), appDtos)
 }
 
 func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Request) {
@@ -102,12 +111,13 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 		panic(errors.New("invalid request body"))
 	}
 
-	user, err := GetUserFromContext(r.Context())
+	user := GetUserFromContext(r.Context())
 	if err != nil {
 		panic(errors.New("forbidden: not allowed to make this request"))
 	}
 
-	app, err := a.applicationRepository.GetByClientIdAndUserId(request.ClientId, user.ID)
+	condition := utils.Queries[utils.WhereClientIdAndUserIdIs](request.ClientId, user.ID)
+	app, err := a.repository.Get(condition)
 	if err != nil {
 		panic(err)
 	}
@@ -119,15 +129,14 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 		panic(errors.New("could not generate secret"))
 	}
 
-	appToUpdate := &model.Application{
-		ClientId:     app.ClientId,
-		ClientSecret: string(hashed),
+	update := map[string]any{
+		"ClientSecret": string(hashed),
 	}
 
-	_, err = a.applicationRepository.Update(appToUpdate)
+	err = a.repository.Update(app.ID, update)
 
 	if err != nil {
-		panic(errors.New("could not generate secret"))
+		panic(err)
 	}
 
 	applicationResponse := &model.ApplicationResponse{
@@ -136,16 +145,13 @@ func (a *applicationHandler) GenerateSecret(w http.ResponseWriter, r *http.Reque
 		RedirectUrl:  app.RedirectUri,
 	}
 
-	response := model.NewResponse[*model.ApplicationResponse]("secret generated successfully", applicationResponse)
-
-	_ = utils.PrintResponse[*model.Response[*model.ApplicationResponse]](http.StatusOK, w, response)
+	_ = utils.PrintResponseNew[*model.ApplicationResponse](w, http.StatusOK, "Secret generated successfully", applicationResponse)
 
 }
-
-func NewApplicationHandler(applicationRepository repositories.ApplicationRepository, ctx kernel.Context) ApplicationHandler {
+func NewApplicationHandler(applicationRepository kernel.Repository[model.Application], ctx kernel.Context) ApplicationHandler {
 	return &applicationHandler{
-		Context:               ctx,
-		applicationRepository: applicationRepository,
+		Context:    ctx,
+		repository: applicationRepository,
 	}
 }
 
@@ -153,7 +159,7 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 
 	var (
 		request *model.CreateApplication
-		user, _ = GetUserFromContext(r.Context())
+		user    = GetUserFromContext(r.Context())
 	)
 
 	err := JsonToStruct(r.Body, &request)
@@ -161,27 +167,45 @@ func (a *applicationHandler) CreateApplication(w http.ResponseWriter, r *http.Re
 		panic(errors.New("invalid request body"))
 	}
 
-	if request.Name == "" {
+	if request.Name == utils.Blank {
 		panic(errors.New("name is required"))
 	}
 
-	alreadyExists, _ := a.applicationRepository.GetByNameAndUserId(request.Name, user.ID)
-	if alreadyExists != nil {
-		panic(errors.New("application with this name already exists"))
+	if request.ClientId == utils.Blank {
+		panic(errors.New("client_id is required"))
 	}
 
-	app := &model.Application{
+	clientId, err := uuid.Parse(request.ClientId)
+	if err != nil {
+		panic(errors.New("invalid client_id. client_id should be uuid"))
+	}
+
+	condition := utils.Queries[utils.WhereNameAndUserIdIs](request.Name, user.ID)
+
+	alreadyExists, _ := a.repository.Get(condition)
+	if alreadyExists != nil {
+		panic(kernel.NewError(http.StatusConflict, "Oops, you have an application with this name already."))
+	}
+
+	condition = utils.Queries[utils.WhereClientIdAndUserIdIs](request.ClientId, user.ID)
+	alreadyExists, _ = a.repository.Get(condition)
+	if alreadyExists != nil {
+		panic(kernel.NewError(http.StatusConflict, "Oops, you have an application with this client id already."))
+	}
+
+	app := model.Application{
 		Name:        request.Name,
 		RedirectUri: request.RedirectUri,
 		User:        *user,
+		ClientId:    clientId.String(),
 	}
 
-	err = a.applicationRepository.Create(app)
+	err = a.repository.Create(app)
 	if err != nil {
 		panic(err)
 	}
 
-	response := model.NewResponse[*model.ApplicationDto]("application created successfully", app.ToDTO())
+	w.Header().Add("Content-Location", "/apps/"+app.ClientId)
 
-	_ = utils.PrintResponse[*model.Response[*model.ApplicationDto]](http.StatusCreated, w, response)
+	_ = utils.PrintResponseNew[any](w, http.StatusCreated, "Application created successfully", nil)
 }
