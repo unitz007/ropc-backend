@@ -2,6 +2,7 @@ package utils
 
 import (
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type ZapLogger struct {
@@ -37,16 +38,19 @@ func (z ZapLogger) Fatal(v string) {
 }
 
 func NewZapLogger(config Config) *ZapLogger {
-	env := config.Environment()
-	if env == "development" {
-		z, _ := zap.NewDevelopment()
-		return &ZapLogger{zap: z}
-	} else if env == "production" {
-		z, _ := zap.NewProduction()
-		return &ZapLogger{zap: z}
-	} else {
-		z, _ := zap.NewProduction()
-		return &ZapLogger{zap: z}
+	env := config.AppMode()
+	var logger *zap.Logger
+	if env == "development" || env == "debug" {
+		c := zap.NewDevelopmentConfig()
+		if env == "development" {
+			c.DisableStacktrace = true
+		}
+		c.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		logger, _ := c.Build()
+		return &ZapLogger{zap: logger}
 	}
+
+	logger, _ = zap.NewProduction()
+	return &ZapLogger{zap: logger}
 
 }

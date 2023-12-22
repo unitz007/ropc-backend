@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
+	"ropc-backend/model"
 	"strings"
 
 	"github.com/golang-jwt/jwt"
@@ -33,10 +34,29 @@ func ValidateToken(token, tokenSecret string) (jwt.MapClaims, error) {
 func PrintResponse[T any](statusCode int, res http.ResponseWriter, payload T) error {
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(statusCode)
+
 	err := json.NewEncoder(res).Encode(payload)
 	if err != nil {
 		res.WriteHeader(http.StatusBadRequest)
 		_, err = res.Write([]byte("Invalid response"))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func PrintResponseNew[T any](responseWriter http.ResponseWriter, statusCode int, message string, payload T) error {
+	responseWriter.Header().Set("Content-Type", "application/json")
+	responseWriter.WriteHeader(statusCode)
+
+	response := model.NewResponse[T](message, payload)
+
+	err := json.NewEncoder(responseWriter).Encode(response)
+	if err != nil {
+		responseWriter.WriteHeader(http.StatusBadRequest)
+		_, err = responseWriter.Write([]byte("Invalid response"))
 		if err != nil {
 			return err
 		}

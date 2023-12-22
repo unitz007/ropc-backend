@@ -23,11 +23,6 @@ type server struct {
 	middlewares Middleware
 }
 
-//func (s *server) AttachMiddleware(middleware func(w http.ResponseWriter, r *http.Request) func(http.ResponseWriter, *http.Request)) Server {
-//	//s.middlewares = append(s.middlewares, middleware)
-//	return s
-//}
-
 func NewServer(ctx Context, defaultMiddlewares Middleware) Server {
 
 	return &server{
@@ -38,8 +33,6 @@ func NewServer(ctx Context, defaultMiddlewares Middleware) Server {
 }
 
 func (s *server) Start(addr string) error {
-
-	//var l Logger = utils.NewZapLogger(utils.NewConfig())
 
 	PORT := func() string {
 		index := 0
@@ -72,19 +65,7 @@ func (s *server) Start(addr string) error {
 
 func (s *server) RegisterHandler(path, method string, handler func(w http.ResponseWriter, r *http.Request)) {
 
-	//for _, m := range s.middlewares {
-	//	h := m(handler)
-	//}
-
-	//var l Logger = utils.NewZapLogger(utils.NewConfig())
-
-	//newRelicApp := utils.NewRelicInstance().App
 	fHandler := s.middlewares.RequestLogging(s.middlewares.PanicHandler(handler))
-	//
-	//// register new relic monitor
-	//newrelic.WrapHandleFunc(newRelicApp, path, fHandler)
-	//txn := s.newRelicApp.StartTransaction(path + "_monitor")
-	//defer txn.End()
 
 	switch method {
 	case http.MethodGet:

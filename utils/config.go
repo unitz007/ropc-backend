@@ -18,13 +18,13 @@ type Config interface {
 	NewRelicAppName() string
 	NewRelicLicense() string
 	Mux() string
-	Environment() string
+	AppMode() string
 }
 
 type config struct{}
 
-func (e config) Environment() string {
-	return getEnvironmentVariable("ROPC_ENVIRONMENT")
+func (e config) AppMode() string {
+	return getEnvironmentVariable("ROPC_APP_MODE")
 }
 
 func (e config) NewRelicAppName() string {

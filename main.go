@@ -23,9 +23,11 @@ import (
 	"net/http"
 	"ropc-backend/handlers"
 	"ropc-backend/kernel"
-	"ropc-backend/repositories"
+	"ropc-backend/model"
 	"ropc-backend/services"
 	"ropc-backend/utils"
+
+	"gorm.io/gorm"
 )
 
 const (
@@ -46,9 +48,15 @@ func main() {
 	}
 
 	defaultMiddlewares := kernel.NewMiddleware(ctx)
+
+	db, ok := ctx.Database().GetDatabaseConnection().(*gorm.DB)
+	if !ok {
+		log.Fatal("Database connection failed. could not get Database connection object")
+	}
+
 	// Repositories
-	applicationRepository := repositories.NewApplicationRepository(ctx.Database())
-	userRepository := repositories.NewUserRepository(ctx.Database())
+	applicationRepository := kernel.NewRepository[model.Application](model.Application{}, db)
+	userRepository := kernel.NewRepository[model.User](model.User{}, db)
 
 	// services
 	authenticatorService := services.NewAuthenticatorService(applicationRepository, config)
@@ -73,7 +81,8 @@ func main() {
 			}
 
 			email := token["sub"].(string)
-			user, err := userRepository.GetUser(email)
+			conditions := utils.Queries[utils.WhereUsernameOrEmailIs](email)
+			user, err := userRepository.Get(conditions)
 			if err != nil {
 				http.Error(w, "", http.StatusForbidden)
 			}
@@ -93,8 +102,8 @@ func main() {
 
 	server.RegisterHandler(generateSecretPath, http.MethodPut, security(applicationHandler.GenerateSecret))
 	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate)
+
 	server.RegisterHandler(userPath, http.MethodPost, userHandler.CreateUser)
-	server.RegisterHandler(userPath+"/auth", http.MethodPost, userHandler.AuthenticateUser)
 
 	// swagger
 

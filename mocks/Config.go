@@ -9,6 +9,24 @@ type Config struct {
 	mock.Mock
 }
 
+// AppMode provides a mock function with given fields:
+func (_m *Config) AppMode() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for AppMode")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // DatabaseHost provides a mock function with given fields:
 func (_m *Config) DatabaseHost() string {
 	ret := _m.Called()
@@ -87,24 +105,6 @@ func (_m *Config) DatabaseUser() string {
 
 	if len(ret) == 0 {
 		panic("no return value specified for DatabaseUser")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Environment provides a mock function with given fields:
-func (_m *Config) Environment() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Environment")
 	}
 
 	var r0 string
