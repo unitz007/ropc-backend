@@ -42,6 +42,7 @@ func NewZapLogger(config Config) *ZapLogger {
 	var logger *zap.Logger
 	if env == "development" || env == "debug" {
 		c := zap.NewDevelopmentConfig()
+		c.OutputPaths = []string{"stdout"}
 		if env == "development" {
 			c.DisableStacktrace = true
 		}

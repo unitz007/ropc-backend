@@ -33,6 +33,7 @@ const (
 	appPath            = "/apps"
 	generateSecretPath = "/apps/generate_secret"
 	userPath           = "/users"
+	idkPath            = "/idk"
 )
 
 func main() {
@@ -61,6 +62,7 @@ func main() {
 	authenticationHandler := handlers.NewAuthenticationHandler(authenticatorService, ctx)
 	applicationHandler := handlers.NewApplicationHandler(applicationRepository, ctx)
 	userHandler := handlers.NewUserHandler(config, userRepository)
+	authorizationHandler := handlers.NewAuthorizationHandler()
 
 	security := kernel.NewSecurity(config, userRepository)
 
@@ -73,6 +75,7 @@ func main() {
 	server.RegisterHandler(appPath+"/{client_id}", http.MethodDelete, applicationHandler.DeleteApplication, true)
 	server.RegisterHandler(generateSecretPath, http.MethodPut, applicationHandler.GenerateSecret, true)
 	server.RegisterHandler(loginPath, http.MethodPost, authenticationHandler.Authenticate, false)
+	server.RegisterHandler(idkPath, http.MethodGet, authorizationHandler.IDK, false)
 
 	server.RegisterHandler(userPath, http.MethodPost, userHandler.CreateUser, false)
 

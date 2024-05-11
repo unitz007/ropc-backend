@@ -5,15 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8bb96528-4ab6-4b1e-8f3f-ff4b5cabf29d" name="Changes" comment="first commit">
+      <change afterPath="$PROJECT_DIR$/handlers/authorization_handler.go" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/ropc-backend" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/services.test" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/dataSources.local.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/dataSources/8b448bbe-19af-49f7-9a2a-80252fc1e749.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/dataSources/8b448bbe-19af-49f7-9a2a-80252fc1e749.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/dataSources/8b448bbe-19af-49f7-9a2a-80252fc1e749/storage_v2/_src_/schema/ropc_db.LQpJUg.meta" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/dataSources/8b448bbe-19af-49f7-9a2a-80252fc1e749/storage_v2/_src_/schema/ropc_db.LQpJUg.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$" beforeDir="false" afterPath="$PROJECT_DIR$" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/coverage.out" beforeDir="false" afterPath="$PROJECT_DIR$/coverage.out" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,7 +29,7 @@
       </list>
     </option>
   </component>
-  <component name="GOROOT" url="file:///usr/local/go" />
+  <component name="GOROOT" url="file:///usr/local/opt/go/libexec" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -46,16 +48,14 @@
     </option>
   </component>
   <component name="KubernetesApiProvider">{
-  &quot;contexts&quot;: [
+  &quot;configuredContexts&quot;: [
     {
-      &quot;name&quot;: &quot;docker-desktop&quot;
+      &quot;name&quot;: &quot;docker-desktop&quot;,
+      &quot;kubeConfigUrl&quot;: &quot;file:///Users/charles/.kube/config&quot;
     }
   ],
   &quot;isMigrated&quot;: true
 }</component>
-  <component name="KubernetesSettings">
-    <option name="contextName" value="docker-desktop" />
-  </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="uh2t3h14" />
   </component>
@@ -87,8 +87,9 @@
     &quot;RunOnceActivity.go.modules.automatic.dependencies.download&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/add__an__application__context&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/charles/Personal/golang/ropc-service/ropc-backend&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -224,22 +225,23 @@
       <framework value="gotest" />
       <method v="2" />
     </configuration>
-    <list>
-      <item itemvalue="Go Build.go build backend-server" />
-      <item itemvalue="Go Test.TestAuthenticationHandler_Authenticate/should_return_401_with_invalid_credentials in backend-server/handlers" />
-      <item itemvalue="Go Test.TestCreateAppHandler/should_panic_with_'application_with_this_name_already_exists' in backend-server/handlers" />
-      <item itemvalue="Go Test.TestCreateAppHandler/valid_json_body_with_empty_client_id in backend-server/handlers" />
-      <item itemvalue="Go Test.gobench backend-server/handlers" />
-    </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Go Build.go build backend-server" />
         <item itemvalue="Go Test.gobench backend-server/handlers" />
         <item itemvalue="Go Test.TestCreateAppHandler/valid_json_body_with_empty_client_id in backend-server/handlers" />
         <item itemvalue="Go Test.TestCreateAppHandler/should_panic_with_'application_with_this_name_already_exists' in backend-server/handlers" />
         <item itemvalue="Go Test.TestAuthenticationHandler_Authenticate/should_return_401_with_invalid_credentials in backend-server/handlers" />
+        <item itemvalue="Go Build.go build backend-server" />
       </list>
     </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9f38398b9061-39b83d9b5494-intellij.indexing.shared.core-IU-241.15989.150" />
+        <option value="bundled-js-predefined-1d06a55b98c1-91d5c284f522-JavaScript-IU-241.15989.150" />
+      </set>
+    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -260,6 +262,13 @@
       <workItem from="1697749885880" duration="10673000" />
       <workItem from="1701086383290" duration="170000" />
       <workItem from="1701086589533" duration="73000" />
+      <workItem from="1711053153213" duration="8000" />
+      <workItem from="1711053249998" duration="947000" />
+      <workItem from="1713254796499" duration="18388000" />
+      <workItem from="1713539868841" duration="55000" />
+      <workItem from="1713539953322" duration="382000" />
+      <workItem from="1713540424885" duration="620000" />
+      <workItem from="1715434117633" duration="651000" />
     </task>
     <task id="LOCAL-00001" summary="major refactor">
       <option name="closed" value="true" />
